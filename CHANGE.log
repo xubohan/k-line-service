@@ -1,0 +1,36 @@
+# CHANGE LOG
+
+This file records each significant change made to the repository and the rationale behind it. New entries should be appended to the top.
+
+2025-09-08
+- Disable Kafka consumer bean by feature flag and default it off:
+  - File: deploy/src/main/java/com/example/kline/interfaces/consumer/TimelineConsumer.java
+    - Added @ConditionalOnProperty("app.kafka.enabled") so no Kafka clients are created when disabled.
+  - File: deploy/src/main/resources/application.properties
+    - Added app.kafka.enabled=false. Rationale: prevent any Kafka connection attempts while broker is not required.
+  - Adjusted tests and config to ensure no WARN logs from Kafka during runs.
+
+- Update author/date headers across deploy Java sources: Set author to `xubohan@myhexin.com` and updated dates to current Beijing time. Rationale: unify ownership metadata per request.
+- Add `deploy/src/main/resources/application.properties`: Set `server.port=8080`; disabled Kafka listener auto-start and excluded Kafka/JDBC/MyBatis/Redis auto-config. Rationale: allow the app and tests to run without external broker/DB/Redis.
+- Modify `application.properties`: Consolidated excludes and commented `spring.kafka.bootstrap-servers` for future enablement via profile. Rationale: prevent background Kafka connection attempts during local dev/tests.
+- Add `.gitignore`: Ignore `.tooling/`, Maven `target/`, IDE files, and OS junk. Rationale: keep repo clean and avoid committing local toolchains/build outputs.
+- Add scripts `scripts/setup-java8-maven363.sh` and `scripts/run-deploy.sh`: Provision local JDK 8 and Maven 3.6.3 inside the project and provide a reproducible way to build/run. Rationale: meet environment constraints without requiring system-wide installs; artifacts are ignored by VCS.
+- Tests added (deploy module):
+  * `KlineResponseTest` (domain range logic)
+  * `TimelineConsumerTest` (simulate broker by directly invoking consumer and mocking repository)
+  * `RedisKlineCacheTest` (range + limit behavior)
+  * `KlineRepositoryImplTest` (DAO fallback, cache population, upsert behavior)
+  * `NameResolverImplTest` (cache-first resolution and backfill)
+  * `KlineDaoTest` (insert/select with limit)
+  * `ApiControllerPortTest` (start on a defined port for tests and hit `/kline` endpoint). Port set to 18080 to avoid conflicts. Rationale: validate API behavior on a fixed port and ensure components work without real broker/DB.
+- Add JaCoCo to `deploy/pom.xml` with coverage threshold (LINE >= 90%) enforced at `verify`. Rationale: ensure high test coverage in CI and local builds.
+- Update `PLAN.md` checkpoints to reflect passing compilation and tests. Rationale: progress tracking.
+
+- Move all test files into a standalone `tests` module to avoid impacting deployment artifacts:
+  - Added module: `tests/pom.xml` depending on `deploy` and `spring-boot-starter-test`.
+  - Migrated tests from `deploy/src/test/java/...` to `tests/src/test/java/...` with the same packages.
+  - Parent `pom.xml`: added `<module>tests</module>` and configured JaCoCo aggregate report and check (LINE ≥ 90%) at the root to enforce coverage across modules.
+  - Rationale: isolate tests from deployable modules while keeping coverage enforcement.
+
+Notes
+- When enabling Kafka or DB in future, remove the corresponding auto-config excludes or activate a profile with the desired settings. The commented properties in `application.properties` can be used as a base.

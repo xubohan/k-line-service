@@ -5,6 +5,7 @@ import com.example.kline.modules.kline.domain.repository.KlineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Kafka consumer for timeline data.
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
  * @date 2025-09-08 20:24:08
  */
 @Component
+@ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true", matchIfMissing = false)
 public class TimelineConsumer {
     private final KlineRepository klineRepository;
 

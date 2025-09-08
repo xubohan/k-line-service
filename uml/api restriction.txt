@@ -1,0 +1,32 @@
+Project guardrails (STRONG CONTRACTS):
+
+1. Kafka topic "timeline" message contract is authoritative. Do NOT change field names/types/order. Validate every consumed message.
+   - Schema file: /contracts/timeline.avsc
+   - Required fields: stockCode(string), marketId(string), price(number), date(string: yyyyMMdd), time(string: HHmm 24h)
+   - Semantic rules:
+     * date format yyyyMMdd, time format HHmm
+     * price >= 0
+     * marketId & stockCode are non-empty
+   - On schema violation: log context, drop or dead-letter per config (no silent fixes).
+
+2. External Name Service contract is authoritative. Do NOT change request/response structure.
+   - OpenAPI file: /contracts/name-service.openapi.yaml
+   - Request: GET url?stockcode=xxx&marketId=xxx
+   - Response JSON:
+     {
+       "code": "0 means success, non-0 means failure",
+       "message": "success/failure message",
+       "data": { "stockName": "..." }
+     }
+   - When code != "0" or data missing: treat as "name not found" and follow fallback.
+
+3. Public HTTP API contract is authoritative. Do NOT change request/response structure.
+   - OpenAPI file: /contracts/kline-service.openapi.yaml
+   - Request: GET url?stockcode=xxx&marketId=xxx
+   - Response JSON:
+     {
+       "code": "0 means success, non-0 means failure",
+       "message": "...",
+       "data": { "stockName": "from name-service" },
+       "list": [ ordered asc by (date,time) of stock_minute_data ]
+     }

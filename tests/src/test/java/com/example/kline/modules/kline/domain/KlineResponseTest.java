@@ -7,12 +7,6 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-/**
- * Tests for KlineResponse.
- *
- * @author xubohan@myhexin.com
- * @date 2025-09-08 20:24:08
- */
 public class KlineResponseTest {
     @Test
     public void testGetDataInRange() {
@@ -35,3 +29,4 @@ public class KlineResponseTest {
         return p;
     }
 }
+
