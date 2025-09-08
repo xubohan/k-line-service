@@ -1,0 +1,303 @@
+# Hexin-Boot DDD Project Guideline
+  
+## Project Structure
+  
+The project is a Java Spring Boot application with a modular architecture. Key characteristics:
+  
+1. Project Organization:
+   - Maven multi-module project with 'api' and 'deploy' modules
+   - Java 8 based application
+   - Spring Boot framework with Spring Cloud for microservices
+   - MyBatis-Plus for database access
+   - Kafka for message queue processing
+   - Dubbo for RPC service exposure
+   - XXL-JOB for scheduled tasks
+   - Redis for caching
+   - Nacos for service discovery and configuration management
+  
+2. Main Modules:
+   - api: Contains Dubbo service interfaces and DTOs that define the service contract
+     - api: Dubbo service interfaces
+     - dto: Data transfer objects for service communication
+     - consts: Constants and enumerations used in the API
+   - deploy: Contains the implementation and application code
+     - app: Application services (manager) and event handlers
+       - manager: Manager classes for coordinating services
+       - event: Event handlers for domain events
+     - common: Common utilities, configurations, and exception handlers
+       - config: Application configuration classes
+       - exception: Custom exception classes and global exception handlers
+       - utils: Utility classes for common operations
+       - external: External service layer
+         - feign: Feign clients for service communication(FeignClients, request, response)
+         - message: prefer kafka for message queue production, don't have queue consumer
+         - rpc: RPC service layer, e.g. dubbo, grpc
+         - impl: Implementations of external services
+     - interfaces: External interfaces (controllers, consumers, jobs, dubbo providers)
+       - consumer: External API consumers and DTOs
+         - dto: Data transfer objects for external API
+       - job: Scheduled job handlers
+       - rpc: RPC service implementations
+         - converter: Converters for transforming between domain entities and DTOs
+         - provider: Implementations of RPC service interfaces
+       - rest: REST API controllers
+         - converter: Converters for transforming between domain entities and view objects
+         - query: Query objects for REST API requests
+         - vo: View objects for REST API responses
+       - scheduler: Scheduler implementations for periodic tasks
+     - modules: Core business modules organized by domain
+       - {module-name}: Specific business modules (e.g., post)
+         - domain: Domain models and business logic
+           - entity: Domain entities
+           - repository: Repository interfaces
+           - service: Domain services
+             - impl: Service implementations
+         - infrastructure: Infrastructure layer implementations
+           - external: External service layer
+           - config: Configuration layer
+           - db: Database layer
+             - converter: Converters between domain entities and data objects
+             - dao: Data Access Objects (MyBatis-Plus mappers)
+             - model: Data Objects (DO) representing database tables
+             - repository: Repository implementations
+  
+3. Interfaces Layer Structure:
+   - consumer/: Kafka message consumers
+     - dto/: Data transfer objects for Kafka messages
+   - rpc/: RPC service implementations
+     - converter/: Converters for transforming between domain entities and DTOs
+     - provider/: Implementations of RPC service interfaces
+   - job/: Scheduled job handlers for periodic tasks
+   - rest/: REST API controllers for HTTP endpoints
+     - converter/: Converters for transforming between domain entities and view objects
+     - query/: Query objects for REST API requests
+     - vo/: View objects for REST API responses
+  
+4. Configuration Structure:
+   - Main configuration: `/deploy/src/main/resources/application.yml`
+   - Bootstrap configuration: `/deploy/src/main/resources/bootstrap.yml` for Nacos configuration
+   - Environment-specific directories: `/deploy/src/main/resources/config/dev`, `/test`, `/preview`, `/prod`
+   - Module-specific configurations in each environment:
+     - `application-{env}.yml`: Environment-specific base settings
+     - `application-db.yml`: Database settings
+     - `application-mq.yml`: Message queue (Kafka) settings
+     - `application-business.yml`: Business logic settings
+     - `application-cache.yml`: Cache settings
+     - `application-ext.yml`: External service integration
+   - Dynamic environment loading via `spring.profiles.active=${THS_TIER}`
+   - Environment variable `THS_TIER` determines current environment (dev/test/preview/prod)
+   - Nacos configuration center integration for dynamic configuration updates
+   - If you cannot determine which configuration to use, see directory `deploy/src/main/resources/config` for details
+  
+5. Kafka Integration:
+   - Multiple consumer configurations in `application-mq.yml`
+   - Each consumer has topic, group, auto-startup, and concurrency settings
+   - Production environment typically has `auto-startup: true`
+   - Development environments typically have `auto-startup: false`
+   - Consumer implementations in `interfaces/consumer` package
+  
+6. Notable Features:
+   - Microservice architecture with Feign clients for service communication
+   - Kafka for asynchronous message processing
+   - MyBatis for database operations
+   - RPC for service exposure
+   - Scheduled jobs for periodic tasks
+   - REST controllers for HTTP endpoints
+  
+## Infrastructure Layer and Implementation Preference
+  
+The infrastructure layer in the project follows a consistent implementation pattern:
+  
+1. Repository Implementation Structure:
+   - Repository implementations are placed in the `modules/{module}/infrastructure/db/repository` directory
+   - They implement domain repository interfaces defined in the domain layer (`modules/{module}/domain/repository`)
+   - They use `@Repository` annotation and are typically marked with `@DS` annotations for read/write splitting
+   - Write operations use "master" data source while read operations use "slave"
+   - Transaction management is handled with `@Transactional` annotations at the repository level
+   - Error handling includes detailed logging with context information
+   - Repository implementations are injected with DAO interfaces and converters
+  
+2. Data Object Pattern:
+   - Data objects use the "DO" suffix to represent database entities (e.g., `PostDO`)
+   - They are placed in the `modules/{module}/infrastructure/db/model` directory
+   - They use MyBatis-Plus annotations (`@TableName`, `@TableId`, `@TableField`) for ORM mapping
+   - They follow Lombok best practices with appropriate annotations (`@Data`, etc.)
+   - Enums are typically stored as strings in the database
+  
+3. DAO Pattern:
+   - DAOs are interfaces that extend MyBatis-Plus `BaseMapper`
+   - They are placed in the `modules/{module}/infrastructure/db/dao` directory
+   - They are scanned by MyBatis-Plus through the `@MapperScan` annotation in the application class
+   - Custom queries can be defined in XML mapper files located in `resources/mapper` directory
+  
+4. Converter Pattern:
+   - Converters transform between domain entities and data objects
+   - They are placed in the `modules/{module}/infrastructure/db/converter` directory
+   - They are implemented using MapStruct for clean mapping
+   - They handle special conversions like enum-to-string mapping
+   - They follow a consistent naming pattern for methods (toEntity, toDO, toEntityList, toDOList)
+  
+5. Query Building:
+   - Queries are built using MyBatis-Plus LambdaQueryChainWrapper for type-safe queries
+   - Complex queries may use custom SQL defined in mapper XML files
+   - Pagination is supported through MyBatis-Plus interceptors
+  
+This layered approach ensures a clean separation between domain logic and infrastructure concerns, making the codebase more maintainable and testable.
+  
+## Lombok Usage Guidelines
+  
+1. Entity and DTO Implementation:
+   - Use Lombok annotations to reduce boilerplate code
+   - Prefer `@Data` for DTOs and entities to generate getters, setters, equals, hashCode, and toString methods
+   - Add `private static final long serialVersionUID = 1L;` for serializable DTOs
+   - Use `@NoArgsConstructor` and `@AllArgsConstructor` for generating constructors
+   - For builder pattern, use `@Builder` annotation
+   - Use `@Slf4j` for logging instead of manually declaring logger instances
+  
+2. Service Layer Implementation:
+   - Use `@RequiredArgsConstructor` for dependency injection via constructor
+   - Mark injected fields as `final` to ensure immutability
+   - Avoid using `@Setter` on service classes to maintain immutability
+   - Use `@Getter` only when necessary for exposing internal state
+   - Use `@Slf4j` for logging in all service classes
+  
+3. Best Practices:
+   - Using `@Data` on any classes to prevent potential issues
+   - Use `@Slf4j` instead of custom logging utilities
+  
+4. Domain Objects:
+   - For domain entities, prefer using `@Data` if business logic is involved
+   - Use `@Value` for immutable value objects
+   - Avoid bidirectional relationships in domain models when possible
+  
+5. Validation and Constraints:
+   - Combine Lombok with Bean Validation annotations (@NotNull, @Size, etc.)
+   - Place validation annotations before Lombok annotations for better readability
+   - Use `@NonNull` on constructor or method parameters to generate null checks
+   - Use validation annotations in controller query objects and DTOs
+  
+These guidelines ensure consistent use of Lombok across the project while maintaining clean and maintainable code.
+  
+## Project Configuration Structure
+  
+The project uses Spring Boot's multi-environment configuration mechanism with the following structure:
+  
+1. Configuration File Organization:
+   - Main configuration file: `/resources/application.yml`
+   - Environment-specific configurations: Organized in dev, test, preview, and prod directories
+   - Module-specific configurations: Each environment has multiple configuration files by functionality
+  
+2. Environment Configuration Directories:
+   - `/resources/config/dev/` - Development environment configuration
+   - `/resources/config/test/` - Testing environment configuration
+   - `/resources/config/preview/` - Pre-release environment configuration
+   - `/resources/config/prod/` - Production environment configuration
+  
+3. Module-Specific Configuration Files:
+   - `application-{env}.yml` - Environment-specific base configurations
+   - `application-db.yml` - Database configurations
+   - `application-mq.yml` - Message queue configurations (Kafka)
+   - `application-business.yml` - Business logic configurations
+   - `application-cache.yml` - Cache-related configurations
+   - `application-ext.yml` - External service integration configurations
+  
+4. Configuration Loading Mechanism:
+   - Dynamic environment loading via `spring.profiles.active=${THS_TIER}`
+   - Module configurations included through `spring.profiles.include`
+   - Environment variable `THS_TIER` determines the current running environment (dev/test/preview/prod)
+  
+5. Message Queue Configuration Features:
+   - Each environment's `application-mq.yml` contains Kafka connection and consumer configurations
+   - Different environments may have different server addresses, authentication information, and startup states
+   - Production environment typically sets `auto-startup: true`, while development environment sets it to `false`
+   - Each consumer configuration includes topic, group, startup status, and concurrency level
+  
+6. External Service Configurations:
+   - `application-ext.yml` contains configurations for external service integrations
+   - Different environments may connect to different external service endpoints
+   - Authentication credentials and API keys are environment-specific
+   - Connection parameters like timeouts and retry policies are configured here
+  
+7. Business Logic Configurations:
+   - `application-business.yml` contains business-specific parameters
+   - Feature flags and toggles for enabling/disabling specific functionality
+   - Business rules and thresholds configurable per environment
+  
+This configuration structure ensures flexibility across different environments while maintaining consistency in the application behavior and facilitates easy management of environment-specific settings.
+  
+## SONAR Rules and Best Practices
+In the project, we must adhere to the following SONAR rules and best practices:
+  
+1. Code Style Standards:
+   - Declare constants using the `private static final` order, not `private final static`
+   - Use standard Java naming conventions (camelCase for methods/variables, PascalCase for classes)
+   - Remove unused import statements
+   - Avoid unnecessary logging, especially warning logs in normal execution paths
+   - Follow consistent indentation and formatting
+   - Use Lombok `@Slf4j` for logging instead of manual logger declarations
+  
+2. Exception Handling:
+   - Avoid empty catch blocks
+   - Do not use try-catch in database operations unless there is specific handling logic
+   - Include detailed information and stack traces in exception logs
+   - Use specific exception types rather than generic Exception
+   - Handle exceptions at the appropriate layer (Repository layer should handle data access exceptions)
+   - Use custom exceptions like `BusinessException` for domain-specific errors
+   - Implement global exception handlers for REST controllers
+  
+3. Code Structure:
+   - Remove unnecessary Serializable interface implementations
+   - Add `serialVersionUID` for classes that implement Serializable
+   - Use generic container factories instead of specific implementations
+   - Avoid redundant field validations, only validate critical fields
+   - Remove unused imports
+   - Follow the established layered architecture pattern (interfaces, application, domain, infrastructure)
+   - Use Apache Commons Lang3 instead of custom utility classes
+  
+4. Performance Optimization:
+   - Avoid creating numerous logs within loops
+   - Use batch operations instead of single-item processing
+   - Choose appropriate collection types for the use case
+   - Use `isEmpty()` instead of `size() == 0` for collection emptiness checks
+   - Optimize database queries to reduce unnecessary joins
+   - Use MyBatis-Plus pagination for large result sets
+  
+5. Security:
+   - Avoid hardcoding sensitive information
+   - Use parameterized configuration through Nacos or environment variables
+   - Use constants instead of magic numbers
+   - Implement proper input validation in controllers and service layers
+   - Follow secure coding practices for external API calls
+  
+6. Null Handling:
+   - Use Optional for potentially null return values
+   - Use `Objects.isNull()` and `Objects.nonNull()` instead of `== null` and `!= null`
+   - Perform null checks before collection operations
+   - Use `StringUtils.isBlank()` for string emptiness checks
+   - Use `CollectionUtils.isEmpty()` for collection emptiness checks
+  
+7. Design Patterns:
+   - Follow Single Responsibility Principle: each class should have only one reason to change
+   - Implement Dependency Inversion: high-level modules should not depend on low-level modules
+   - Use constructor injection with `@RequiredArgsConstructor` instead of field injection
+   - Mark injected fields as `final`
+   - Follow established patterns for Repository, Service, and Controller implementations
+   - Use converters for transforming between different object representations
+  
+8. Testing:
+   - Write unit tests for critical business logic
+   - Mock external dependencies in tests
+   - Ensure test coverage meets minimum requirements
+   - Test both positive and negative scenarios
+   - Isolate tests from external systems
+   - Use Jupiter Test and Mockito for integration testing
+  
+9. Documentation:
+   - Include meaningful Javadoc for public methods and classes
+   - Class javadoc must contain `@author` (e.g. `wangzilong2@myhexin.com`), `@date` (e.g. `2025-06-18 22:30:00`)
+   - Document non-obvious behavior
+   - Keep comments up-to-date with code changes
+   - Use clear and descriptive method and variable names
+   - Maintain up-to-date README documentation
+  
+These rules help maintain code quality, maintainability, and performance while reducing potential security risks. All developers should continuously follow these best practices during development.

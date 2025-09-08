@@ -1,0 +1,57 @@
+@startuml
+title 数据写入功能
+
+participant "Kafka Broker" as KB
+participant "Kafka消费者" as KC
+participant "数据处理单元" as DP
+participant "股票名称缓存" as LCache
+participant "股票名称名称服务接口" as NS
+participant "Redis缓存" as RDS
+database "数据库" as DB
+
+' 1. 主动缓存预热流程
+note over DP, NS
+  此任务由数据处理单元启动，
+  独立于Kafka流，用于预热缓存。
+end note
+DP -> NS: 调用股票名称名称服务接口
+NS --> DP: 返回股票名称信息
+DP -> LCache: 写入 股票名称信息
+alt 股票名称缓存写入成功
+  LCache --> DP: 返回成功状态
+else 股票名称缓存写入失败
+  LCache --> DP: 返回失败状态
+  DP -> DP: 记录失败并启动重试(股票名称缓存)
+end
+
+'---
+' 2. Kafka 消息处理主流程
+'---
+
+' Kafka Broker 推送原始消息。
+KB -> KC: 推送原始消息
+
+' 消费者将消息交给数据处理单元进行处理。
+KC -> DP: 将消息交给数据处理单元
+
+' 将全量 K线数据写入数据库。
+DP -> DB: 写入数据库(保存全量信息)
+alt 数据库写入成功
+  DB --> DP: 返回成功状态
+
+  ' 写入 Redis 缓存，用于保存K线数据。
+  DP -> RDS: 写入 K线数据缓存(最近15日)
+  alt Redis缓存写入成功
+    RDS --> DP: 返回成功状态
+  else Redis缓存写入失败
+    RDS --> DP: 返回失败状态
+    DP -> DP: 记录失败并启动重试(K线数据缓存)
+  end
+
+else 数据库写入失败
+  DB --> DP: 返回失败状态
+  DP -> DP: 记录失败并启动重试(数据库)
+end
+
+@enduml
+

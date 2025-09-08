@@ -1,0 +1,79 @@
+@startuml
+
+actor "Client" as C
+participant "熔断层\n(Sentinel)" as S
+participant "业务服务\n(Service)" as BS
+participant "股票名称缓存\n(LCache)" as LCache
+participant "股票名称服务接口\n(NS)" as NS
+participant "Redis缓存\n(RDS)" as RDS
+database "数据库\n(DB)" as DB
+
+title 股票K线数据查询时序图
+
+C -> S: 请求 /kline
+activate S
+S -> S: HTTP 入口限流/熔断检查
+
+alt 限流/熔断通过
+    S --> BS: 允许请求
+    deactivate S
+
+    BS -> LCache: 查询股票名称
+    activate BS
+    activate LCache
+
+    alt LCache 命中
+        LCache --> BS: 返回股票名称
+        deactivate LCache
+    else LCache 未命中
+        LCache --> BS: 未命中
+        deactivate LCache
+        BS -> NS: 请求股票名称
+        activate NS
+        NS --> BS: 返回股票名称
+        deactivate NS
+        BS -> LCache: 写入股票名称
+        activate LCache
+        LCache --> BS: 写入成功
+        deactivate LCache
+    end
+
+    alt 股票名称获取失败
+        BS --> C: 返回约定值「名称未找到」
+        deactivate BS
+    else 股票名称获取成功
+        BS -> RDS: 查询K线数据 (近15日)
+        activate RDS
+        
+        alt RDS 命中
+            RDS --> BS: 返回K线数据
+            deactivate RDS
+        else RDS 未命中
+            RDS --> BS: 未命中
+            deactivate RDS
+            BS -> DB: 查询全量K线数据
+            activate DB
+            
+            alt DB 查询成功
+                DB --> BS: 返回最近15日K线数据
+                deactivate DB
+                BS -> RDS: 回填最近15日K线数据
+                activate RDS
+                RDS --> BS: 回填成功
+                deactivate RDS
+            else DB 查询失败
+                DB --> BS: 查询失败
+                deactivate DB
+                BS --> C: 返回约定值「数据查询失败」
+                deactivate BS
+            end
+        end
+        BS --> C: 返回 股票名称 + K线数据
+        deactivate BS
+    end
+else 限流/熔断未通过
+    S --> C: 返回约定值「请求过多」
+    deactivate S
+end
+
+@enduml
