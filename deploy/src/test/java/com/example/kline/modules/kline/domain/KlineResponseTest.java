@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for KlineResponse.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
 public class KlineResponseTest {
     @Test

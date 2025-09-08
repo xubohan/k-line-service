@@ -294,7 +294,7 @@ In the project, we must adhere to the following SONAR rules and best practices:
   
 9. Documentation:
    - Include meaningful Javadoc for public methods and classes
-   - Class javadoc must contain `@author` (e.g. `wangzilong2@myhexin.com`), `@date` (e.g. `2025-06-18 22:30:00`)
+   - Class javadoc must contain `@author` (`xubohan@myhexin.com`), `@date` (current time, e.g. `2025-06-18 22:30:00`)
    - Document non-obvious behavior
    - Keep comments up-to-date with code changes
    - Use clear and descriptive method and variable names

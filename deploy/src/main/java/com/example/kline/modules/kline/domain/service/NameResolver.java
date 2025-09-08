@@ -3,8 +3,8 @@ package com.example.kline.modules.kline.domain.service;
 /**
  * Resolve stock name by code and market.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
 public interface NameResolver {
     /**

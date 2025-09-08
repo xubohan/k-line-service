@@ -1,0 +1,17 @@
+# Local toolchain and caches
+.tooling/
+
+# Maven build outputs
+**/target/
+
+# IDE
+.idea/
+.project
+.classpath
+.settings/
+.vscode/
+
+# OS
+.DS_Store
+scripts/run-deploy.sh
+scripts/setup-java8-maven363.sh

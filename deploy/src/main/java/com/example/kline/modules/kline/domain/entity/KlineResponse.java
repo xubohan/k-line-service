@@ -3,20 +3,26 @@ package com.example.kline.modules.kline.domain.entity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Data;
 
 /**
  * Aggregate root representing k-line data response.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
-@Data
 public class KlineResponse {
     private String stockcode;
     private String marketId;
     private String stockName;
     private final List<PricePoint> data = new ArrayList<>();
+
+    public String getStockcode() { return stockcode; }
+    public void setStockcode(String stockcode) { this.stockcode = stockcode; }
+    public String getMarketId() { return marketId; }
+    public void setMarketId(String marketId) { this.marketId = marketId; }
+    public String getStockName() { return stockName; }
+    public void setStockName(String stockName) { this.stockName = stockName; }
+    public List<PricePoint> getData() { return data; }
 
     /**
      * Append price point.

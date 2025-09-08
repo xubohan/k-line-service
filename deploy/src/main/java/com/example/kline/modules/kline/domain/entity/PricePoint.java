@@ -1,15 +1,13 @@
 package com.example.kline.modules.kline.domain.entity;
 
 import java.math.BigDecimal;
-import lombok.Data;
 
 /**
  * Price point of stock k-line.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
-@Data
 public class PricePoint {
     private Long ts;
     private BigDecimal open;
@@ -17,6 +15,19 @@ public class PricePoint {
     private BigDecimal low;
     private BigDecimal close;
     private Long vol;
+
+    public Long getTs() { return ts; }
+    public void setTs(Long ts) { this.ts = ts; }
+    public BigDecimal getOpen() { return open; }
+    public void setOpen(BigDecimal open) { this.open = open; }
+    public BigDecimal getHigh() { return high; }
+    public void setHigh(BigDecimal high) { this.high = high; }
+    public BigDecimal getLow() { return low; }
+    public void setLow(BigDecimal low) { this.low = low; }
+    public BigDecimal getClose() { return close; }
+    public void setClose(BigDecimal close) { this.close = close; }
+    public Long getVol() { return vol; }
+    public void setVol(Long vol) { this.vol = vol; }
 
     /**
      * Validate price point.

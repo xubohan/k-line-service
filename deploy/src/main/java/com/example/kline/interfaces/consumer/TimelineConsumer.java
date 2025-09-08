@@ -2,20 +2,24 @@ package com.example.kline.interfaces.consumer;
 
 import com.example.kline.modules.kline.domain.entity.KlineResponse;
 import com.example.kline.modules.kline.domain.repository.KlineRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Kafka consumer for timeline data.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
 @Component
-@RequiredArgsConstructor
 public class TimelineConsumer {
     private final KlineRepository klineRepository;
+
+    @Autowired
+    public TimelineConsumer(KlineRepository klineRepository) {
+        this.klineRepository = klineRepository;
+    }
 
     /**
      * Consume message (stub implementation).

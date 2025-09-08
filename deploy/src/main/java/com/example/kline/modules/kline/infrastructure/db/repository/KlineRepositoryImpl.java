@@ -6,21 +6,26 @@ import com.example.kline.modules.kline.domain.repository.KlineRepository;
 import com.example.kline.modules.kline.infrastructure.cache.RedisKlineCache;
 import com.example.kline.modules.kline.infrastructure.db.dao.KlineDao;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.CollectionUtils;
 
 /**
  * Repository implementation.
  *
- * @author wangzilong2@myhexin.com
- * @date 2025-06-18 22:30:00
+ * @author xubohan@myhexin.com
+ * @date 2025-09-08 20:24:08
  */
 @Repository
-@RequiredArgsConstructor
 public class KlineRepositoryImpl implements KlineRepository {
     private final RedisKlineCache klineCache;
     private final KlineDao klineDao;
+
+    @Autowired
+    public KlineRepositoryImpl(RedisKlineCache klineCache, KlineDao klineDao) {
+        this.klineCache = klineCache;
+        this.klineDao = klineDao;
+    }
 
     @Override
     public KlineResponse findRange(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
