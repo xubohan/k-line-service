@@ -29,6 +29,12 @@ public class KlineRepositoryImpl implements KlineRepository {
 
     @Override
     public KlineResponse findRange(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
+        if (stockcode == null || stockcode.trim().isEmpty() || marketId == null || marketId.trim().isEmpty()) {
+            return new KlineResponse();
+        }
+        if (limit != null && limit < 0) {
+            return new KlineResponse();
+        }
         KlineResponse cacheResp = klineCache.getRange(stockcode, marketId, startTs, endTs, limit);
         if (!CollectionUtils.isEmpty(cacheResp.getData())) {
             return cacheResp;
@@ -44,6 +50,15 @@ public class KlineRepositoryImpl implements KlineRepository {
 
     @Override
     public void upsertBatch(KlineResponse response) {
+        if (response == null) {
+            return; // ignore invalid input by convention
+        }
+        if (response.getStockcode() == null || response.getStockcode().trim().isEmpty()) {
+            return;
+        }
+        if (response.getMarketId() == null || response.getMarketId().trim().isEmpty()) {
+            return;
+        }
         klineDao.insertBatch(response.getStockcode(), response.getMarketId(), response.getData());
         klineCache.putBatch(response, 900);
     }

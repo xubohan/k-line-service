@@ -20,6 +20,13 @@ public class KlineDao {
     private final Map<String, List<PricePoint>> store = new ConcurrentHashMap<>();
 
     public List<PricePoint> selectRange(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
+        if (stockcode == null || stockcode.trim().isEmpty() || marketId == null || marketId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (limit != null && limit < 0) {
+            // invalid limit -> return empty by convention to avoid interrupting service
+            return Collections.emptyList();
+        }
         List<PricePoint> list = store.getOrDefault(key(stockcode, marketId), Collections.emptyList());
         List<PricePoint> range = list.stream()
             .filter(p -> (startTs == null || p.getTs() >= startTs)
@@ -33,6 +40,13 @@ public class KlineDao {
     }
 
     public int insertBatch(String stockcode, String marketId, List<PricePoint> points) {
+        if (stockcode == null || stockcode.trim().isEmpty() || marketId == null || marketId.trim().isEmpty()) {
+            // ignore invalid key
+            return 0;
+        }
+        if (points == null || points.isEmpty()) {
+            return 0;
+        }
         store.computeIfAbsent(key(stockcode, marketId), k -> new ArrayList<>()).addAll(points);
         return points.size();
     }

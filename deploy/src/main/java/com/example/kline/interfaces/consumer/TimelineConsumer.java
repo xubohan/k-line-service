@@ -30,6 +30,14 @@ public class TimelineConsumer {
      */
     @KafkaListener(topics = "timeline", groupId = "kline-service")
     public void run(KlineResponse response) {
+        if (response == null) {
+            return; // ignore invalid input to avoid interrupting service
+        }
+        String sc = response.getStockcode();
+        String mk = response.getMarketId();
+        if (sc == null || sc.trim().isEmpty() || mk == null || mk.trim().isEmpty()) {
+            return; // ignore invalid input
+        }
         klineRepository.upsertBatch(response);
     }
 }

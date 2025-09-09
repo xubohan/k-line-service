@@ -20,6 +20,13 @@ public class RedisKlineCache {
     private final Map<String, List<PricePoint>> store = new ConcurrentHashMap<>();
 
     public KlineResponse getRange(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
+        if (stockcode == null || stockcode.trim().isEmpty() || marketId == null || marketId.trim().isEmpty()) {
+            return new KlineResponse();
+        }
+        if (limit != null && limit < 0) {
+            // invalid limit -> return empty response by convention
+            return new KlineResponse();
+        }
         List<PricePoint> list = store.get(key(stockcode, marketId));
         if (list == null) {
             return new KlineResponse();
