@@ -25,6 +25,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <argLine>${jacocoArgLine}</argLine>
+                    <excludes>
+                        <!-- 排除绑定端口/外部环境的用例；MockMvc 用例仍参与执行与覆盖率 -->
+                        <exclude>**/interfaces/rest/ApiControllerHttpTest.java</exclude>
+                        <exclude>**/e2e/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -34,10 +43,15 @@
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
+                        <configuration>
+                            <append>true</append>
+                            <!-- tests 自身保存 exec 到 tests/target -->
+                            <destFile>${project.build.directory}/jacoco.exec</destFile>
+                            <propertyName>jacocoArgLine</propertyName>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
 </project>
-

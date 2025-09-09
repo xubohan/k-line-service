@@ -8,8 +8,8 @@
 
     <modules>
         <module>api</module>
-        <module>deploy</module>
         <module>tests</module>
+        <module>deploy</module>
     </modules>
 
     <properties>
@@ -51,34 +51,6 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>aggregate-report-and-check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>report-aggregate</goal>
-                            <goal>check</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.90</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 

@@ -1,0 +1,22 @@
+[
+  {"stockCode":"300033","marketId":"33","price":89.1,"date":"20200101","time":"0940"},
+  {"stockCode":"300033","marketId":"33","price":89.3,"date":"20200101","time":"0941"},
+  {"stockCode":"300033","marketId":"33","price":89.2,"date":"20200101","time":"0942"},
+  {"stockCode":"300033","marketId":"33","price":89.5,"date":"20200101","time":"0943"},
+  {"stockCode":"300033","marketId":"33","price":89.7,"date":"20200101","time":"0944"},
+  {"stockCode":"300033","marketId":"33","price":89.6,"date":"20200101","time":"0945"},
+  {"stockCode":"300033","marketId":"33","price":89.9,"date":"20200101","time":"0946"},
+  {"stockCode":"300033","marketId":"33","price":90.0,"date":"20200101","time":"0947"},
+  {"stockCode":"300033","marketId":"33","price":89.8,"date":"20200101","time":"0948"},
+  {"stockCode":"300033","marketId":"33","price":90.1,"date":"20200101","time":"0949"},
+  {"stockCode":"300033","marketId":"33","price":90.2,"date":"20200101","time":"0950"},
+  {"stockCode":"300033","marketId":"33","price":90.3,"date":"20200101","time":"0951"},
+  {"stockCode":"300033","marketId":"33","price":90.5,"date":"20200101","time":"0952"},
+  {"stockCode":"300033","marketId":"33","price":90.4,"date":"20200101","time":"0953"},
+  {"stockCode":"300033","marketId":"33","price":90.7,"date":"20200101","time":"0954"},
+  {"stockCode":"300033","marketId":"33","price":90.8,"date":"20200101","time":"0955"},
+  {"stockCode":"300033","marketId":"33","price":90.6,"date":"20200101","time":"0956"},
+  {"stockCode":"300033","marketId":"33","price":90.9,"date":"20200101","time":"0957"},
+  {"stockCode":"300033","marketId":"33","price":91.0,"date":"20200101","time":"0958"},
+  {"stockCode":"300033","marketId":"33","price":91.2,"date":"20200101","time":"0959"}
+]

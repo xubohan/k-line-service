@@ -1,0 +1,99 @@
+@startuml
+title 股票K线整体流程图（L2+DB, MVP）
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam ArrowColor #555555
+skinparam ActivityBorderColor #333333
+skinparam ActivityBackgroundColor #F7F7F7
+skinparam RoundCorner 12
+
+' ===================== 读取链路 =====================
+partition "读取链路" {
+  start
+  :Client 请求 /kline;
+  :HTTP 入口限流检查;
+  if (通过) then (是)
+    :查询股票名称;
+    if (名称存在) then (是)
+      :查询K线数据;
+      if (数据存在) then (是)
+        :返回 特定格式数据;
+        stop
+      else (否)
+        :返回约定值 (数据查询失败);
+        stop
+      endif
+    else (否)
+      :返回约定值 (名称未找到);
+      stop
+    endif
+  else (否)
+    :返回约定值 (请求过多);
+    stop
+  endif
+}
+
+' ===================== 正常用户访问流 =====================
+partition "正常用户访问流" {
+  start
+  :Client 请求 /kline;
+  :查询名称成功 (从缓存或名称服务);
+  :查询K线数据成功 (从L2或数据库);
+  :返回 特定格式数据;
+  stop
+}
+@enduml
+
+' ===================== 名称查询子流程 =====================
+partition "查询股票名称" {
+  start
+  :查询名称缓存;
+  if (名称缓存命中) then (是)
+    :名称 = 缓存值;
+    stop
+  else (否)
+    :调用名称服务;
+    if (名称存在) then (是)
+      :回填名称缓存;
+      :名称 = 查询结果;
+      stop
+    else (否)
+      :返回约定值;
+      stop
+    endif
+  endif
+}
+
+' ===================== K线数据查询子流程 =====================
+partition "查询K线数据" {
+  start
+  :查询 L2 Redis;
+  if (L2 命中) then (是)
+    :数据 = L2数据;
+    stop
+  else (否)
+    :数据库访问限流检查;
+    if (允许访问) then (是)
+      :查询数据库;
+      :回填 L2(带随机 TTL);
+      :数据 = DB数据;
+      stop
+    else (否)
+      :请求过多;
+      stop
+    endif
+  endif
+}
+
+' ===================== 写入链路 =====================
+partition "写入链路" {
+  start
+  :Kafka Consumer 拉取批次数据;
+  :解析与校验;
+  :写入 L2 Redis(最新分钟数据);
+  :写入数据库(追加或更新);
+  :记录成功日志与指标;
+  stop
+}
+

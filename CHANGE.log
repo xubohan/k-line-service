@@ -32,5 +32,52 @@ This file records each significant change made to the repository and the rationa
   - Parent `pom.xml`: added `<module>tests</module>` and configured JaCoCo aggregate report and check (LINE ≥ 90%) at the root to enforce coverage across modules.
   - Rationale: isolate tests from deployable modules while keeping coverage enforcement.
 
+- Add workflow API tests to simulate real user requests and error cases in tests module:
+  - File: tests/src/test/java/com/example/kline/interfaces/rest/ApiControllerWorkflowTest.java
+    - Happy path: seeds in-memory DAO, calls `/kline` with only `stockcode` and `marketId` (no start/end), asserts 200 and payload fields，返回全部数据点。
+    - Error paths: missing required params and invalid `limit` type both produce 400.
+  - Rationale: validate exposed API behavior for both normal and erroneous inputs without external broker/DB.
+
+- Add minimal global exception wrapper to keep API contract consistent on errors:
+  - File: deploy/src/main/java/com/example/kline/interfaces/rest/GlobalExceptionHandler.java
+    - Wraps bad requests as JSON `{ code: "400", message, data: null, list: [] }` with HTTP 400.
+    - Wraps unexpected errors as JSON `{ code: "500", message: "internal error", data: null, list: [] }` with HTTP 500.
+  - Updated workflow tests to assert non-"0" code on error responses.
+
+- Align public HTTP API to api restriction contract:
+  - File: deploy/src/main/java/com/example/kline/interfaces/rest/ApiController.java
+    - Now returns a minimal Map-shaped JSON with fields `code`, `message`, `data:{stockName}`, and `list` (ordered by date/time), removing extra DTO classes to keep code concise.
+    - List items derive `date` (yyyyMMdd) and `time` (HHmm) from `ts`; include OHLC/vol for completeness.
+  - Tests updated (already asserting Map shape):
+    - `tests/.../ApiControllerPortTest.java`: assert wrapper structure instead of raw entity.
+    - `tests/.../ApiControllerWorkflowTest.java`: assert `code/message/data.stockName/list` and ordering.
+  - Rationale: ensure the exposed API strictly follows the strong contract in `uml/api restriction.txt` while minimizing code size.
+
+- Merge HTTP tests into a single suite:
+  - Removed `ApiControllerWorkflowTest` and `ApiControllerPortTest`; added `tests/src/test/java/com/example/kline/interfaces/rest/ApiControllerHttpTest.java` combining fixed-port (18080) and error-path checks. Rationale: simplify and keep tests concise while matching the contract.
+- ApiControllerHttpTest: fix data accumulation across test methods by using a unique stockcode per seed (append System.nanoTime). Rationale: KlineDao is in-memory and persists between tests, so reusing the same key would inflate list size.
+- Build config: prevent failure when a module has no tests
+  - File: deploy/pom.xml
+  - Set maven-surefire-plugin `<failIfNoTests>false</failIfNoTests>` so running `-pl tests -am` does not fail in `deploy` (which intentionally has no tests).
+- Coverage config: ensure JaCoCo exec is always written for tests module
+  - File: tests/pom.xml
+  - Set jacoco-maven-plugin `append=true` and explicit `destFile=${project.build.directory}/jacoco.exec` to guarantee `tests/target/jacoco.exec` is created during `test`.
+- Remove Kafka consumer disabled check per request:
+  - Deleted `tests/src/test/java/com/example/kline/interfaces/consumer/KafkaConsumerDisabledTest.java`.
+  - Rationale: this assertion is not required; other tests already avoid Kafka usage.
+- Move kafka_data.json into test resources:
+  - File: `tests/src/test/resources/kafka_data.json` (copied from UML artifact) for stable classpath loading across tests. Rationale: reduce path coupling and make tests portable.
+
 Notes
 - When enabling Kafka or DB in future, remove the corresponding auto-config excludes or activate a profile with the desired settings. The commented properties in `application.properties` can be used as a base.
+- Simplify deploy/pom.xml to minimal runtime deps:
+  - Keep: commons-lang3, spring-boot-starter-web, spring-kafka
+  - Remove: spring-boot-starter-data-redis, mybatis-spring-boot-starter, test deps in deploy, and deploy-local jacoco report execution
+  - Rationale: 运行期仅需 Web 与 Kafka 注解支持；DAO/缓存为内存实现，无需引入 Redis/MyBatis；测试与覆盖率由 tests 模块与根聚合处理。
+- 覆盖率报告路径调整：统一输出到 tests 模块
+  - 根 pom.xml：移除聚合/合并报告执行，避免在根 target 生成 Jacoco 报告
+  - tests/pom.xml：
+    - prepare-agent 写入 `${project.build.directory}/jacoco.exec`
+    - report：以 deploy 的 class/source 生成 HTML 到 `tests/target/site/jacoco`
+    - check：按 LINE ≥ 90% 在 `verify` 阶段强制校验
+  - 结果：执行 `mvn -pl tests -am verify` 后，覆盖率报告与校验均集中在 `tests/target/site/jacoco` 下
