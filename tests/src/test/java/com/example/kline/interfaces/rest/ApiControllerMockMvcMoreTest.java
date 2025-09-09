@@ -113,4 +113,17 @@ public class ApiControllerMockMvcMoreTest {
            .andExpect(jsonPath("$.list").isArray())
            .andExpect(jsonPath("$.list").isEmpty());
     }
+
+    @Test
+    public void testGetKline_UnknownStock_returns200EmptyList() throws Exception {
+        String sc = "UNKNOWN"; String mk = "ZZ";
+        when(klineRepository.findRange(eq(sc), eq(mk), isNull(), isNull(), isNull())).thenReturn(new KlineResponse());
+        when(nameResolver.resolve(sc, mk)).thenReturn("N/A");
+
+        mvc.perform(get("/kline").param("stockcode", sc).param("marketId", mk))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.code").value("0"))
+           .andExpect(jsonPath("$.list").isArray())
+           .andExpect(jsonPath("$.list").isEmpty());
+    }
 }

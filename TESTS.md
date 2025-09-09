@@ -41,9 +41,11 @@
 - insertBatch: 批量插入
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoTest.java: 插入后可查询
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoMoreTest.java: 1000 条 < 1s 性能冒烟；并发多键插入无死锁
+  - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoVolumeTest.java: 3600 条批量插入成功
 - selectRange: 范围筛选、排序、limit 截断
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoTest.java: limit 截断
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoMoreTest.java: 大数据范围中段；limit 大于数据量时返回全部
+  - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoVolumeTest.java: 3600 条全量查询且按 ts 升序
 
 ## deploy/src/main/java/com/example/kline/modules/kline/infrastructure/db/repository/KlineRepositoryImpl.java
 - findRange: 先查缓存命中则返回；未命中回源 DB 并回填缓存
@@ -110,7 +112,8 @@
 - 时间范围：`startTs <= endTs`
   - 覆盖：`startTs > endTs` 返回空列表（MockMvcMore: `testGetKline_TimeRange_startGreaterThanEnd_returnsEmptyList`）。
 - 未知股票/市场：返回 200 且空数据
-  - 待补：可通过 Mock 仓储返回空 `KlineResponse` 断言 `list` 为空、`code=0`。
+  - 覆盖：Mock 仓储返回空 `KlineResponse`，断言 `code=0` 且 `list` 为空。
+    - tests/src/test/java/com/example/kline/interfaces/rest/ApiControllerMockMvcMoreTest.java: testGetKline_UnknownStock_returns200EmptyList
 - 安全输入：
   - SQL 注入 payload（如 `"';DROP TABLE--"`）
     - 待补：应断言“安全处理”（返回 200 且不回显危险内容，或 400 拒绝）。当前实现未专门校验长度/黑名单。
