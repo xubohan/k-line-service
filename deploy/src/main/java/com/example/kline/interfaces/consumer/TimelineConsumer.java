@@ -3,6 +3,7 @@ package com.example.kline.interfaces.consumer;
 import com.example.kline.modules.kline.domain.entity.KlineResponse;
 import com.example.kline.modules.kline.domain.entity.PricePoint;
 import com.example.kline.modules.kline.domain.repository.KlineRepository;
+import com.example.kline.modules.kline.infrastructure.cache.TimelineRedisWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,10 +30,17 @@ public class TimelineConsumer {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final KlineRepository klineRepository;
+    private final TimelineRedisWriter timelineRedisWriter;
 
     @Autowired
-    public TimelineConsumer(KlineRepository klineRepository) {
+    public TimelineConsumer(KlineRepository klineRepository, TimelineRedisWriter timelineRedisWriter) {
         this.klineRepository = klineRepository;
+        this.timelineRedisWriter = timelineRedisWriter;
+    }
+
+    // Backward-compatible convenience constructor for tests without Spring context
+    public TimelineConsumer(KlineRepository klineRepository) {
+        this(klineRepository, new com.example.kline.modules.kline.infrastructure.cache.TimelineRedisWriter());
     }
 
     /**
@@ -66,6 +74,8 @@ public class TimelineConsumer {
             resp.addPricePoint(p);
 
             klineRepository.upsertBatch(resp);
+            // also write to Redis ZSET for L2 cache
+            timelineRedisWriter.write(msg.stockCode, msg.marketId, ts, msg.price);
         } catch (Exception e) {
             log.warn("Failed to process timeline message, discarded: {}", payload, e);
         }
