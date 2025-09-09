@@ -1,0 +1,9 @@
+Fix Plan (major bugs)
+
+- [x] Merge duplicate spring.autoconfigure.exclude in `deploy/src/main/resources/application.properties`
+- [x] Harden KlineDao: thread-safe writes/reads, null-safe range/sort
+- [x] Make RedisKlineCache sort/filter null-safe
+- [x] Clamp API `limit` to max=1000 and tolerate null repo result
+- [x] Enforce strict Kafka message schema in TimelineConsumer
+
+Process: check off each item upon completion.

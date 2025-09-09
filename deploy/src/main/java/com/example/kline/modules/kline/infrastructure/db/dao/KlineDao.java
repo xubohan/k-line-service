@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 
@@ -27,8 +28,14 @@ public class KlineDao {
             // invalid limit -> return empty by convention to avoid interrupting service
             return Collections.emptyList();
         }
-        List<PricePoint> list = store.getOrDefault(key(stockcode, marketId), Collections.emptyList());
-        List<PricePoint> range = list.stream()
+        List<PricePoint> list = store.get(key(stockcode, marketId));
+        if (list == null || list.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // take a snapshot to avoid ConcurrentModificationException while iterating
+        List<PricePoint> snapshot = new ArrayList<>(list);
+        List<PricePoint> range = snapshot.stream()
+            .filter(p -> p != null && p.getTs() != null)
             .filter(p -> (startTs == null || p.getTs() >= startTs)
                 && (endTs == null || p.getTs() <= endTs))
             .sorted((a, b) -> Long.compare(a.getTs(), b.getTs()))
@@ -47,7 +54,7 @@ public class KlineDao {
         if (points == null || points.isEmpty()) {
             return 0;
         }
-        store.computeIfAbsent(key(stockcode, marketId), k -> new ArrayList<>()).addAll(points);
+        store.computeIfAbsent(key(stockcode, marketId), k -> new CopyOnWriteArrayList<>()).addAll(points);
         return points.size();
     }
 

@@ -72,7 +72,14 @@ public class ApiController {
         if (limit != null && limit < 0) {
             throw new IllegalArgumentException("limit must be >= 0");
         }
-        KlineResponse response = klineRepository.findRange(stockcode, marketId, startTs, endTs, limit);
+        // Clamp excessive limits to protect resources (DoS prevention)
+        final int MAX_LIMIT = 1000;
+        Integer effectiveLimit = limit == null ? null : Math.min(limit, MAX_LIMIT);
+
+        KlineResponse response = klineRepository.findRange(stockcode, marketId, startTs, endTs, effectiveLimit);
+        if (response == null) {
+            response = new KlineResponse();
+        }
         String stockName = nameResolver.resolve(stockcode, marketId);
 
         Map<String, Object> resp = new LinkedHashMap<>();

@@ -32,6 +32,7 @@ public class RedisKlineCache {
             return new KlineResponse();
         }
         List<PricePoint> range = list.stream()
+            .filter(p -> p != null && p.getTs() != null)
             .filter(p -> (startTs == null || p.getTs() >= startTs)
                 && (endTs == null || p.getTs() <= endTs))
             .sorted((a, b) -> Long.compare(a.getTs(), b.getTs()))

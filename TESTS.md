@@ -46,6 +46,8 @@
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoTest.java: limit 截断
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoMoreTest.java: 大数据范围中段；limit 大于数据量时返回全部
   - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoVolumeTest.java: 3600 条全量查询且按 ts 升序
+ - concurrency（insert/select 同键并发）: 并发写入与查询无异常（无 ConcurrentModificationException），最终数量一致且按 ts 升序
+  - tests/src/test/java/com/example/kline/modules/kline/infrastructure/db/dao/KlineDaoConcurrentReadWriteTest.java: 同键并发写入与查询，验证无异常、数量一致、排序正确
 
 ## deploy/src/main/java/com/example/kline/modules/kline/infrastructure/db/repository/KlineRepositoryImpl.java
 - findRange: 先查缓存命中则返回；未命中回源 DB 并回填缓存
