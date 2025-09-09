@@ -61,7 +61,7 @@ public class ApiController {
         resp.put("data", new LinkedHashMap<String, Object>() {{ put("stockName", stockName); }});
 
         List<Map<String, Object>> list = response.getData().stream()
-            .sorted(Comparator.comparingLong(PricePoint::getTs))
+            .sorted(Comparator.comparingLong(p -> p.getTs() == null ? 0L : p.getTs()))
             .map(ApiController::toItem)
             .collect(Collectors.toList());
         resp.put("list", list);
