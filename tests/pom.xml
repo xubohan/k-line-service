@@ -50,6 +50,30 @@
                             <propertyName>jacocoArgLine</propertyName>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco.exec</dataFile>
+                            <outputDirectory>${project.build.directory}/site/jacoco</outputDirectory>
+                            <!-- 指向deploy模块的类文件 -->
+                            <classFileDirectories>
+                                <classFileDirectory>${project.parent.basedir}/deploy/target/classes</classFileDirectory>
+                            </classFileDirectories>
+                            <sourceFileDirectories>
+                                <sourceFileDirectory>${project.parent.basedir}/deploy/src/main/java</sourceFileDirectory>
+                            </sourceFileDirectories>
+                            <excludes>
+                                <exclude>com/example/kline/config/**</exclude>
+                                <exclude>com/example/kline/interfaces/ingest/**</exclude>
+                                <exclude>com/example/kline/modules/kline/infrastructure/cache/TimelineRedisWriter*</exclude>
+                                <exclude>**/*TypeReference*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

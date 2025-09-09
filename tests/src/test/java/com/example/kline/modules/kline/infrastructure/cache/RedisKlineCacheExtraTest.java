@@ -32,10 +32,7 @@ public class RedisKlineCacheExtraTest {
     @Test
     public void testPutBatchOverwrite() {
         // Arrange
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         // First batch
         KlineResponse r1 = new KlineResponse();
@@ -60,10 +57,7 @@ public class RedisKlineCacheExtraTest {
     @Test
     public void testGetRangeSortOrder_ascending() {
         // Arrange
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         KlineResponse r = new KlineResponse();
         r.setStockcode("S"); r.setMarketId("M");

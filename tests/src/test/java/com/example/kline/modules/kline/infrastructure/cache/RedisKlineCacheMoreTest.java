@@ -33,12 +33,7 @@ public class RedisKlineCacheMoreTest {
     @Test
     public void testGetRangeWhenNoKey_returnsEmpty() {
         // Arrange
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        when(mockEnv.getProperty("spring.redis.host")).thenReturn("127.0.0.1");
-        when(mockEnv.getProperty("spring.redis.port")).thenReturn("6379");
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         // Act
         KlineResponse r = cache.getRange("X", "Y", null, null, null);
@@ -51,10 +46,7 @@ public class RedisKlineCacheMoreTest {
     @Test
     public void testLimitBoundaryOne() {
         // Arrange
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         KlineResponse resp = new KlineResponse();
         resp.setStockcode("S");
@@ -74,11 +66,8 @@ public class RedisKlineCacheMoreTest {
     @Test
     public void testConfiguration_ExternalDisabled() {
         // Arrange
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        
         // Act
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         // Test that it works in memory mode
         KlineResponse resp = new KlineResponse();

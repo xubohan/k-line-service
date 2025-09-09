@@ -33,12 +33,7 @@ public class RedisKlineCacheTest {
     @Test
     public void testInMemoryMode_PutAndRangeAndLimit() {
         // Test with in-memory mode (no external Redis)
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        when(mockEnv.getProperty("spring.redis.host")).thenReturn("127.0.0.1");
-        when(mockEnv.getProperty("spring.redis.port")).thenReturn("6379");
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         KlineResponse resp = new KlineResponse();
         resp.setStockcode("000001");
@@ -60,10 +55,7 @@ public class RedisKlineCacheTest {
     
     @Test
     public void testGetRange_InvalidInputs_ReturnsEmpty() {
-        Environment mockEnv = Mockito.mock(Environment.class);
-        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
-        
-        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        RedisKlineCache cache = new RedisKlineCache();
         
         // Test null/empty stockcode
         KlineResponse result1 = cache.getRange(null, "SZ", null, null, null);

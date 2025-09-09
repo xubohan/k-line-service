@@ -37,5 +37,35 @@ public class TimelineConsumerTest {
         Mockito.verify(repo, Mockito.times(1)).upsertBatch(resp);
         Mockito.verifyNoMoreInteractions(repo);
     }
+
+    @Test
+    public void testConsumeFromJsonPayload() {
+        KlineRepository repo = Mockito.mock(KlineRepository.class);
+        TimelineConsumer consumer = new TimelineConsumer(repo);
+
+        String validPayload = "{\"stockCode\":\"300033\",\"marketId\":\"33\",\"price\":10.5,\"date\":\"20231201\",\"time\":\"1030\"}";
+        
+        consumer.run(validPayload);
+
+        Mockito.verify(repo, Mockito.times(1)).upsertBatch(Mockito.any(KlineResponse.class));
+    }
+
+    @Test
+    public void testConsumeInvalidPayload() {
+        KlineRepository repo = Mockito.mock(KlineRepository.class);
+        TimelineConsumer consumer = new TimelineConsumer(repo);
+
+        // Invalid JSON
+        consumer.run("{invalid json}");
+        
+        // Empty payload
+        consumer.run("");
+        
+        // Null payload
+        consumer.run((String) null);
+
+        // Verify no interactions with repository for invalid payloads
+        Mockito.verifyNoInteractions(repo);
+    }
 }
 
