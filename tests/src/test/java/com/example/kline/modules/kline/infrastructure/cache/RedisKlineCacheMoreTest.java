@@ -5,10 +5,14 @@ import com.example.kline.modules.kline.domain.entity.PricePoint;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.core.env.Environment;
+
+import static org.mockito.Mockito.*;
 
 /**
  * Extended unit tests for RedisKlineCache.
- * Tests advanced caching scenarios and validation.
+ * Tests advanced caching scenarios and validation using mocks.
  *
  * @author xubohan@myhexin.com
  * @date 2025-09-09 22:30:00
@@ -28,22 +32,66 @@ public class RedisKlineCacheMoreTest {
 
     @Test
     public void testGetRangeWhenNoKey_returnsEmpty() {
-        RedisKlineCache cache = new RedisKlineCache();
+        // Arrange
+        Environment mockEnv = Mockito.mock(Environment.class);
+        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
+        when(mockEnv.getProperty("spring.redis.host")).thenReturn("127.0.0.1");
+        when(mockEnv.getProperty("spring.redis.port")).thenReturn("6379");
+        
+        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        
+        // Act
         KlineResponse r = cache.getRange("X", "Y", null, null, null);
+        
+        // Assert
         Assertions.assertNotNull(r);
         Assertions.assertTrue(r.getData().isEmpty());
     }
 
     @Test
     public void testLimitBoundaryOne() {
-        RedisKlineCache cache = new RedisKlineCache();
+        // Arrange
+        Environment mockEnv = Mockito.mock(Environment.class);
+        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
+        
+        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        
         KlineResponse resp = new KlineResponse();
-        resp.setStockcode("S"); resp.setMarketId("M");
-        resp.addPricePoint(pp(1)); resp.addPricePoint(pp(2));
+        resp.setStockcode("S");
+        resp.setMarketId("M");
+        resp.addPricePoint(pp(1));
+        resp.addPricePoint(pp(2));
         cache.putBatch(resp, 900);
+        
+        // Act
         KlineResponse out = cache.getRange("S", "M", null, null, 1);
+        
+        // Assert
         Assertions.assertEquals(1, out.getData().size());
         Assertions.assertEquals(1L, out.getData().get(0).getTs().longValue());
+    }
+    
+    @Test
+    public void testConfiguration_ExternalDisabled() {
+        // Arrange
+        Environment mockEnv = Mockito.mock(Environment.class);
+        when(mockEnv.getProperty("app.redis.external", Boolean.class, false)).thenReturn(false);
+        
+        // Act
+        RedisKlineCache cache = new RedisKlineCache(mockEnv);
+        
+        // Test that it works in memory mode
+        KlineResponse resp = new KlineResponse();
+        resp.setStockcode("TEST");
+        resp.setMarketId("MK");
+        resp.addPricePoint(pp(100));
+        cache.putBatch(resp, 900);
+        
+        KlineResponse result = cache.getRange("TEST", "MK", null, null, null);
+        
+        // Assert
+        Assertions.assertEquals(1, result.getData().size());
+        Assertions.assertEquals(100L, result.getData().get(0).getTs().longValue());
     }
 }
 
