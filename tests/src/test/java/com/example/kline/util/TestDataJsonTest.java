@@ -10,6 +10,13 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+/**
+ * Tests for parsing test data JSON files.
+ * Validates that boundary and error data files can be parsed correctly.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class TestDataJsonTest {
 
     private final ObjectMapper mapper = new ObjectMapper();

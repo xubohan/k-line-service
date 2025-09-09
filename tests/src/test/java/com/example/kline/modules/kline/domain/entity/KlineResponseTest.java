@@ -9,6 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+/**
+ * Unit tests for KlineResponse entity.
+ * Tests price point management and range operations.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineResponseTest {
 
     private PricePoint createPoint(long ts) {

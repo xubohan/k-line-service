@@ -23,6 +23,13 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.ResponseEntity;
 
+/**
+ * Kafka integration end-to-end test.
+ * Tests complete data flow from JSON ingestion to API response.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @org.springframework.test.context.TestPropertySource(properties = {
         "spring.kafka.listener.auto-startup=false",

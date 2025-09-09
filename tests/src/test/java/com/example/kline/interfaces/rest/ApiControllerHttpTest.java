@@ -19,6 +19,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 
+/**
+ * HTTP integration tests for ApiController.
+ * Tests REST API endpoints with real HTTP server.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @org.springframework.test.context.TestPropertySource(properties = {
         "server.port=18080",

@@ -20,6 +20,9 @@ import org.springframework.stereotype.Component;
 /**
  * Kafka consumer for timeline data with strict schema validation.
  * Expected message JSON schema: {"stockCode","marketId","price","date","time"}.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 @Component
 @ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true", matchIfMissing = false)

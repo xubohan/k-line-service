@@ -8,6 +8,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Cache hit tests for KlineRepository.
+ * Tests caching effectiveness and hit ratios.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineRepositoryCacheHitTest {
 
     private static PricePoint pp(long ts) {

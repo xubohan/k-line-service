@@ -13,6 +13,9 @@ import org.springframework.stereotype.Component;
  * Response JSON: {"code":"0","message":"success","data":{"stockName":"..."}}
  *
  * This stub constructs the contract JSON and returns data.stockName value.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 @Component
 public class NameServiceHttp {

@@ -17,6 +17,9 @@ import redis.clients.jedis.JedisPoolConfig;
  * Key: kline:1m:{marketId}:{stockCode}
  * Score: minute timestamp (tsSec/60)
  * Member: price string (toPlainString)
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 @Component
 public class TimelineRedisWriter {

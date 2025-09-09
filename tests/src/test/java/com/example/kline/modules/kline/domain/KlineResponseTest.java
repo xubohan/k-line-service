@@ -7,6 +7,13 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for KlineResponse domain entity.
+ * Tests data range filtering and validation methods.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineResponseTest {
     @Test
     public void testGetDataInRange() {

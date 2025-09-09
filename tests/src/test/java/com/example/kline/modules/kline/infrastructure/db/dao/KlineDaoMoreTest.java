@@ -10,6 +10,13 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Extended unit tests for KlineDao.
+ * Tests advanced data access scenarios and edge cases.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineDaoMoreTest {
 
     @Test

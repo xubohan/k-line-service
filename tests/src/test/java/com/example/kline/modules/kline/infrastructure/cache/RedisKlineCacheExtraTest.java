@@ -6,6 +6,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Extra unit tests for RedisKlineCache.
+ * Tests additional functionality and edge cases.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class RedisKlineCacheExtraTest {
     private static PricePoint pp(long ts) {
         PricePoint p = new PricePoint();

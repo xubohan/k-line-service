@@ -9,6 +9,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+/**
+ * Global exception handler for REST controllers.
+ * Handles common parameter validation errors and server exceptions.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

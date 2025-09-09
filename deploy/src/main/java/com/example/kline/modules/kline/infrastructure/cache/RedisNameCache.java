@@ -14,6 +14,9 @@ import redis.clients.jedis.JedisPoolConfig;
  * - In-memory map (default, no external deps)
  * - Real Redis via Jedis when enabled by system/env property
  *   app.redis.external=true (host: spring.redis.host, port: spring.redis.port)
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 @Component
 public class RedisNameCache {

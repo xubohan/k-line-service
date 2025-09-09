@@ -8,6 +8,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for KlineRepositoryImpl.
+ * Tests repository pattern with cache and DAO integration.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineRepositoryImplTest {
     private PricePoint pp(long ts) {
         PricePoint p = new PricePoint();

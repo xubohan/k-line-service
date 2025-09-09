@@ -19,6 +19,13 @@ import org.junit.jupiter.api.Test;
  * Concurrency test: concurrent writers and readers on the same key should not throw
  * ConcurrentModificationException and results should remain sorted and consistent.
  */
+/**
+ * Concurrent read-write tests for KlineDao.
+ * Tests thread safety and concurrent access patterns.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineDaoConcurrentReadWriteTest {
 
     @Test

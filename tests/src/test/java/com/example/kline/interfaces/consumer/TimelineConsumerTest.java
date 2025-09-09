@@ -7,6 +7,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+/**
+ * Unit tests for TimelineConsumer.
+ * Tests consumer behavior with mock repository.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class TimelineConsumerTest {
     @Test
     public void testConsumeDelegatesToRepository() {

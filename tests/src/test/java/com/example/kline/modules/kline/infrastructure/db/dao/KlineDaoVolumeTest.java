@@ -6,6 +6,13 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Volume tests for KlineDao.
+ * Tests performance and capacity with large data sets.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineDaoVolumeTest {
 
     @Test

@@ -7,6 +7,13 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for KlineDao.
+ * Tests in-memory data access operations.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class KlineDaoTest {
     private PricePoint pp(long ts) {
         PricePoint p = new PricePoint();

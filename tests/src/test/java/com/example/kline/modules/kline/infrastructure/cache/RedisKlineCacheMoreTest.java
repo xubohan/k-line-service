@@ -6,6 +6,13 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Extended unit tests for RedisKlineCache.
+ * Tests advanced caching scenarios and validation.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class RedisKlineCacheMoreTest {
 
     private static PricePoint pp(long ts) {

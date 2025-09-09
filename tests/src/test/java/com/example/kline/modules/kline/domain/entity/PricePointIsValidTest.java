@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Focused tests for PricePoint.isValid().
  * 当前实现规则：仅校验字段非空；不校验数值范围与高低关系。
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 public class PricePointIsValidTest {
 

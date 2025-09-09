@@ -18,6 +18,9 @@ import org.springframework.stereotype.Component;
 /**
  * Optional startup ingestor: loads a timeline JSON array file into Redis ZSET.
  * Enable with property: app.ingest.file=/absolute/or/relative/path.json
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 @Component
 @ConditionalOnProperty(name = "app.ingest.file")

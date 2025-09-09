@@ -18,6 +18,13 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Extended MockMvc tests for ApiController.
+ * Tests edge cases and validation scenarios.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 @WebMvcTest(controllers = ApiController.class)
 @Import(GlobalExceptionHandler.class)
 public class ApiControllerMockMvcMoreTest {

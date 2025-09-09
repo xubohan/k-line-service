@@ -8,6 +8,13 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Extended unit tests for NameResolverImpl service.
+ * Tests advanced scenarios and edge cases.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class NameResolverImplMoreTest {
 
     static class CountingService extends NameServiceHttp {

@@ -17,6 +17,13 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * MockMvc tests for ApiController.
+ * Tests API contract and validation behavior with mocked dependencies.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 @WebMvcTest(controllers = ApiController.class)
 @Import(GlobalExceptionHandler.class)
 public class ApiControllerMockMvcTest {

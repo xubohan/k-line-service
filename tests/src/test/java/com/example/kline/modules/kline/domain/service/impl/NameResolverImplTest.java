@@ -5,6 +5,13 @@ import com.example.kline.modules.kline.infrastructure.external.NameServiceHttp;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Unit tests for NameResolverImpl service.
+ * Tests caching behavior and service integration.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
+ */
 public class NameResolverImplTest {
     static class CountingNameService extends NameServiceHttp {
         int calls = 0;

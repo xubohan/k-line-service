@@ -10,6 +10,9 @@ import java.util.Random;
 
 /**
  * Helper to generate random but valid k-line points for tests.
+ *
+ * @author xubohan@myhexin.com
+ * @date 2025-09-09 22:30:00
  */
 public final class RandomKlineDataGenerator {
     private RandomKlineDataGenerator() {}
