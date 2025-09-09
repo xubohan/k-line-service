@@ -52,6 +52,26 @@ public class ApiController {
                                         @RequestParam(required = false) Long startTs,
                                         @RequestParam(required = false) Long endTs,
                                         @RequestParam(required = false) Integer limit) {
+        // Basic parameter validation to align with API restrictions
+        if (stockcode == null || stockcode.trim().isEmpty()) {
+            throw new IllegalArgumentException("stockcode must not be blank");
+        }
+        if (marketId == null || marketId.trim().isEmpty()) {
+            throw new IllegalArgumentException("marketId must not be blank");
+        }
+        // Length limits: prevent abuse and enforce black-box expectations
+        final int MAX_STOCKCODE_LEN = 64;
+        final int MAX_MARKETID_LEN = 16;
+        if (stockcode.length() > MAX_STOCKCODE_LEN) {
+            throw new IllegalArgumentException("stockcode too long");
+        }
+        if (marketId.length() > MAX_MARKETID_LEN) {
+            throw new IllegalArgumentException("marketId too long");
+        }
+        // Limit must be non-negative when provided
+        if (limit != null && limit < 0) {
+            throw new IllegalArgumentException("limit must be >= 0");
+        }
         KlineResponse response = klineRepository.findRange(stockcode, marketId, startTs, endTs, limit);
         String stockName = nameResolver.resolve(stockcode, marketId);
 

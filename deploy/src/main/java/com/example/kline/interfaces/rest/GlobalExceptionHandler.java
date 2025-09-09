@@ -12,7 +12,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({MissingServletRequestParameterException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler({MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class,
+            IllegalArgumentException.class})
     public ResponseEntity<Map<String, Object>> handleBadRequest(Exception ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("code", "400");
@@ -32,4 +34,3 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-

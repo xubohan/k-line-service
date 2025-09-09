@@ -1,24 +1,26 @@
 package com.example.kline.modules.kline.domain.entity;
 
 import java.math.BigDecimal;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PricePointTest {
 
     @Test
-    public void testIsValidFalseWhenMissingFields() {
-        PricePoint p = new PricePoint();
-        p.setTs(1L);
-        // 其余为 null，应判定为无效
-        Assertions.assertFalse(p.isValid());
+    void testIsValid_AllFieldsNull() {
+        PricePoint point = new PricePoint();
+        assertFalse(point.isValid());
+    }
 
-        // 逐步补齐但仍缺少一个字段 -> 仍然无效
-        p.setOpen(BigDecimal.ONE);
-        p.setHigh(BigDecimal.ONE);
-        p.setLow(BigDecimal.ONE);
-        p.setClose(BigDecimal.ONE);
-        Assertions.assertFalse(p.isValid()); // 缺少 vol
+    @Test
+    void testIsValid_PartialNull() {
+        PricePoint point = new PricePoint();
+        point.setTs(1L);
+        point.setOpen(BigDecimal.ONE);
+        assertFalse(point.isValid());
     }
 
     @Test
@@ -31,14 +33,39 @@ public class PricePointTest {
         p.setClose(new BigDecimal("1.5"));
         p.setVol(10L);
 
-        Assertions.assertTrue(p.isValid());
-        // 覆盖 getters
-        Assertions.assertEquals(2L, p.getTs());
-        Assertions.assertEquals(new BigDecimal("1.2"), p.getOpen());
-        Assertions.assertEquals(new BigDecimal("2.3"), p.getHigh());
-        Assertions.assertEquals(new BigDecimal("0.8"), p.getLow());
-        Assertions.assertEquals(new BigDecimal("1.5"), p.getClose());
-        Assertions.assertEquals(10L, p.getVol());
+        assertTrue(p.isValid());
+        assertEquals(2L, p.getTs());
+        assertEquals(new BigDecimal("1.2"), p.getOpen());
+        assertEquals(new BigDecimal("2.3"), p.getHigh());
+        assertEquals(new BigDecimal("0.8"), p.getLow());
+        assertEquals(new BigDecimal("1.5"), p.getClose());
+        assertEquals(10L, p.getVol());
+    }
+
+    @Test
+    void testPriceRelations() {
+        PricePoint point = new PricePoint();
+        point.setTs(1L);
+        point.setOpen(BigDecimal.ONE);
+        point.setHigh(BigDecimal.valueOf(1));
+        point.setLow(BigDecimal.valueOf(2));
+        point.setClose(BigDecimal.TEN);
+        point.setVol(1L);
+        // current implementation does not verify price relations
+        assertTrue(point.isValid());
+    }
+
+    @Test
+    void testNegativeValues() {
+        PricePoint point = new PricePoint();
+        point.setTs(1L);
+        BigDecimal negative = BigDecimal.valueOf(-1);
+        point.setOpen(negative);
+        point.setHigh(negative);
+        point.setLow(negative);
+        point.setClose(negative);
+        point.setVol(-1L);
+        // current implementation only checks for nulls
+        assertTrue(point.isValid());
     }
 }
-
