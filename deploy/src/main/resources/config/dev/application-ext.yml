@@ -1,0 +1,42 @@
+# External Services Configuration
+app:
+  # 名称服务配置
+  namesvc:
+    baseUrl: ''                    # 外部名称服务URL，空则使用桩模式
+    timeout: 5000                  # 请求超时时间(毫秒)
+    stub:
+      enabled: true              # 开发环境启用桩模式
+      stockcode: 300033           # 测试股票代码
+      marketId: 33               # 测试市场ID
+      stockName: wu han          # 测试股票名称
+  
+  external:
+    # 股票名称服务配置
+    name-service:
+      enabled: true
+      base-url: http://localhost:8080
+      timeout: 5000
+      retry-count: 3
+      circuit-breaker:
+        enabled: false           # 开发环境关闭熔断器
+        failure-threshold: 5
+        recovery-timeout: 30000
+    
+    # 外部API配置
+    api:
+      timeout: 10000
+      max-connections: 50
+      connection-timeout: 3000
+      read-timeout: 5000
+    
+    # Feign客户端配置
+    feign:
+      hystrix:
+        enabled: false          # 开发环境关闭Hystrix
+      compression:
+        request:
+          enabled: true
+        response:
+          enabled: true
+      logging:
+        level: FULL             # 开发环境使用完整日志

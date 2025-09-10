@@ -1,0 +1,18 @@
+# Development environment configuration
+spring:
+  profiles:
+    include: db,mq,business,cache,ext
+
+logging:
+  level:
+    com.example.kline: DEBUG
+    org.springframework.kafka: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Development specific settings
+app:
+  kafka:
+    enabled: true
+  redis:
+    external: false  # Use in-memory cache for development

@@ -10,15 +10,23 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 /**
- * Name cache with two modes:
- * - In-memory map (default, no external deps)
- * - Real Redis via Jedis when enabled by system/env property
- *   app.redis.external=true (host: spring.redis.host, port: spring.redis.port)
+ * 股票名称缓存
+ * 
+ * 专门用于缓存从外部名称服务获取的股票名称信息
+ * 使用Redis数据库1，与K线数据缓存(数据库0)分离
+ * 
+ * 支持两种模式：
+ * - 内存模式 (默认, 无外部依赖)
+ * - Redis外部模式 (当app.redis.external=true时启用)
+ * 
+ * @author xubohan@myhexin.com
+ * @date 2025-09-10 13:30:00
  */
 @Component
 public class RedisNameCache {
     private final Map<String, String> store = new ConcurrentHashMap<>();
 
+    private static final int NAME_CACHE_DB = 1;  // 使用Redis数据库1存储名称缓存
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private final boolean externalEnabled;
     private final String redisHost;
@@ -40,6 +48,7 @@ public class RedisNameCache {
         String k = key(stockcode, marketId);
         if (externalEnabled) {
             try (Jedis j = jedis().getResource()) {
+                j.select(NAME_CACHE_DB);  // 切换到名称缓存数据库
                 String val = j.get(k);
                 if (val == null) return null;
                 String parsed = parseNameFromValue(val);
@@ -62,6 +71,7 @@ public class RedisNameCache {
         String k = key(stockcode, marketId);
         if (externalEnabled) {
             try (Jedis j = jedis().getResource()) {
+                j.select(NAME_CACHE_DB);  // 切换到名称缓存数据库
                 // Handle null name for JSON formatting
                 String nm = name != null ? name : "";
                 // store as JSON with the requested format

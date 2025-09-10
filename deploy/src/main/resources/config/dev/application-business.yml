@@ -1,0 +1,25 @@
+# Business Logic Configuration
+app:
+  business:
+    # K线数据相关配置
+    kline:
+      data-retention-days: 15      # 数据保留天数
+      max-query-limit: 1000        # 最大查询限制
+      default-limit: 100           # 默认查询限制
+    
+    # 股票名称相关配置
+    stock:
+      name-cache-enabled: true     # 启用股票名称缓存
+      name-service-timeout: 5000   # 名称服务超时时间(ms)
+    
+    # API限流配置
+    rate-limit:
+      enabled: true
+      default-qps: 200            # 默认QPS限制
+      burst-capacity: 300         # 突发容量
+    
+    # 数据验证配置
+    validation:
+      strict-mode: false          # 严格模式（开发环境关闭）
+      max-stockcode-length: 64    # 股票代码最大长度
+      max-marketid-length: 16     # 市场ID最大长度

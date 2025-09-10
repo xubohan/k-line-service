@@ -1,0 +1,55 @@
+# Kafka Message Queue Configuration
+spring:
+  kafka:
+    bootstrap-servers: 10.10.80.109:9092
+    
+    # Producer configuration
+    producer:
+      acks: 1                    # 主节点写入成功后返回
+      retries: 3                 # 失败重试次数
+      batch-size: 16384          # 16KB批次大小
+      buffer-memory: 33554432    # 32MB处理缓冲区
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        linger.ms: 100                     # 批次空闲时间
+        request.timeout.ms: 5000           # 请求超时时间
+        max.in.flight.requests.per.connection: 1  # 保证严格有序
+    
+    # Consumer configuration
+    consumer:
+      bootstrap-servers: 10.10.80.109:9092
+      group-id: kline-service
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        session.timeout.ms: 30000
+        heartbeat.interval.ms: 3000
+        max.poll.records: 500
+        max.poll.interval.ms: 300000
+    
+    # Listener configuration
+    listener:
+      auto-startup: true        # 生产环境启用自动启动
+      concurrency: 1           # 单线程消费保证有序性
+      ack-mode: manual_immediate
+      missing-topics-fatal: false
+    
+    # Common properties for both producer and consumer
+    properties:
+      security.protocol: SASL_PLAINTEXT
+      sasl.mechanism: SCRAM-SHA-256
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="test-7" password="test-7";
+
+# Topic configurations
+app:
+  kafka:
+    topics:
+      timeline: timeline
+    consumer:
+      timeline:
+        topic: timeline
+        group: kline-service
+        auto-startup: true
+        concurrency: 1

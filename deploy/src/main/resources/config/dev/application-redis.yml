@@ -1,0 +1,18 @@
+# Cache Configuration (Redis)
+spring:
+  redis:
+    host: ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_IP}
+    port: ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_PORT}
+    password: protfolio!@#*
+    timeout: 5000
+    database: 0
+    lettuce:
+      pool:
+        max-active: 10
+        max-wait: 2000
+        max-idle: 8
+        min-idle: 1
+
+# Cache specific settings
+  cache:
+    type: redis

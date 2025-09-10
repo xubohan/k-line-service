@@ -1,0 +1,33 @@
+server:
+  port: ${PORT:0}
+
+spring:
+  profiles:
+    active: ${THS_TIER:dev}
+    include: db,mq,business,cache,ext
+  # Disable database auto-configuration for MVP phase (Redis primary storage)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
+
+# Global application settings
+app:
+  # Kafka feature flag
+  kafka:
+    enabled: true
+  # Rate limiting for API endpoints  
+  rate:
+    kline:
+      qps: 200
+  # Redis external connection flag
+  redis:
+    external: true
+  # Name service configuration
+  namesvc:
+    stub:
+      enabled: true
+      stockcode: 300033
+      marketId: 33
+      stockName: wu han
