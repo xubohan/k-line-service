@@ -5,6 +5,12 @@ import com.example.kline.modules.kline.domain.entity.PricePoint;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.stereotype.Component;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,20 +19,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 /**
- * Simulated Redis cache for k-line data.
+ * K线数据Redis缓存
+ * 
+ * 使用Redis数据库0存储K线时间序列数据，与名称缓存(数据库1)分离
  *
  * @author xubohan@myhexin.com
- * @date 2025-09-08 20:24:08
+ * @date 2025-09-10 13:30:00
  */
 @Component
 public class RedisKlineCache {
@@ -36,23 +40,20 @@ public class RedisKlineCache {
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HHmm");
 
     private final boolean externalEnabled;
-    private final String redisHost;
-    private final int redisPort;
-    private volatile JedisPool pool; // lazy init
+    private final StringRedisTemplate redisTemplate;
 
+    // 无参构造函数，用于测试
     public RedisKlineCache() {
         this.externalEnabled = Boolean.parseBoolean(getProp("app.redis.external", "false"));
-        this.redisHost = getProp("spring.redis.host", "127.0.0.1");
-        this.redisPort = Integer.parseInt(getProp("spring.redis.port", "6379"));
+        this.redisTemplate = null;
     }
 
     @Autowired
-    public RedisKlineCache(Environment env) {
+    public RedisKlineCache(Environment env, StringRedisTemplate redisTemplate) {
         boolean fromSpring = env.getProperty("app.redis.external", Boolean.class, false);
         boolean fromSys = Boolean.parseBoolean(getProp("app.redis.external", "false"));
         this.externalEnabled = fromSpring || fromSys;
-        this.redisHost = coalesce(env.getProperty("spring.redis.host"), getProp("spring.redis.host", "127.0.0.1"));
-        this.redisPort = Integer.parseInt(coalesce(env.getProperty("spring.redis.port"), getProp("spring.redis.port", "6379")));
+        this.redisTemplate = externalEnabled ? redisTemplate : null;
     }
 
     public KlineResponse getRange(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
@@ -93,15 +94,15 @@ public class RedisKlineCache {
     }
 
     public void putBatch(KlineResponse response, long ttlSec) {
-        if (externalEnabled) {
+        if (externalEnabled && redisTemplate != null) {
             // Optional: write to Redis as array of simple points (ts, open, high, low, close, vol)
             String k = redisDataKey(response.getStockcode(), response.getMarketId());
-            try (Jedis j = jedis().getResource()) {
+            try {
                 String json = M.writeValueAsString(response.getData());
-                if (ttlSec > 0 && ttlSec < Integer.MAX_VALUE) {
-                    j.setex(k, (int) ttlSec, json);
+                if (ttlSec > 0) {
+                    redisTemplate.opsForValue().set(k, json, ttlSec, TimeUnit.SECONDS);
                 } else {
-                    j.set(k, json);
+                    redisTemplate.opsForValue().set(k, json);
                 }
                 return;
             } catch (Exception ignore) {
@@ -124,23 +125,17 @@ public class RedisKlineCache {
         return "kline:1m:" + marketId + ":" + stockcode;
     }
 
-    private JedisPool jedis() {
-        JedisPool p = pool;
-        if (p == null) {
-            synchronized (this) {
-                if (pool == null) {
-                    pool = new JedisPool(new JedisPoolConfig(), redisHost, redisPort);
-                }
-                p = pool;
-            }
-        }
-        return p;
+    private static String getProp(String key, String def) {
+        String v = System.getProperty(key);
+        if (v == null) v = System.getenv(key.replace('.', '_').toUpperCase());
+        return v != null ? v : def;
     }
 
     private List<PricePoint> loadFromRedisString(String stockcode, String marketId) {
+        if (redisTemplate == null) return null;
         String k = redisDataKey(stockcode, marketId);
-        try (Jedis j = jedis().getResource()) {
-            String val = j.get(k);
+        try {
+            String val = redisTemplate.opsForValue().get(k);
             if (val == null) return null;
             return parsePoints(val);
         } catch (Exception e) {
@@ -149,21 +144,25 @@ public class RedisKlineCache {
     }
 
     private List<PricePoint> loadFromZSet(String stockcode, String marketId, Long startTs, Long endTs, Integer limit) {
+        if (redisTemplate == null) return null;
         String k = redisZSetKey(stockcode, marketId);
-        try (Jedis j = jedis().getResource()) {
+        try {
             double min = (startTs == null) ? Double.NEGATIVE_INFINITY : (double) (startTs / 60L);
             double max = (endTs == null) ? Double.POSITIVE_INFINITY : (double) (endTs / 60L);
-            java.util.Set<redis.clients.jedis.Tuple> tuples;
+            
+            Set<ZSetOperations.TypedTuple<String>> tuples;
             if (limit != null && limit >= 0) {
-                tuples = j.zrangeByScoreWithScores(k, min, max, 0, limit);
+                tuples = redisTemplate.opsForZSet().rangeByScoreWithScores(k, min, max, 0, limit);
             } else {
-                tuples = j.zrangeByScoreWithScores(k, min, max);
+                tuples = redisTemplate.opsForZSet().rangeByScoreWithScores(k, min, max);
             }
+            
             if (tuples == null || tuples.isEmpty()) return new ArrayList<>();
+            
             List<PricePoint> out = new ArrayList<>(tuples.size());
-            for (redis.clients.jedis.Tuple t : tuples) {
-                long ts = (long) t.getScore() * 60L;
-                String priceStr = t.getElement();
+            for (ZSetOperations.TypedTuple<String> t : tuples) {
+                long ts = (long) (t.getScore() != null ? t.getScore() : 0) * 60L;
+                String priceStr = t.getValue();
                 PricePoint p = new PricePoint();
                 p.setTs(ts);
                 java.math.BigDecimal price = null;
@@ -222,12 +221,4 @@ public class RedisKlineCache {
         LocalTime t = LocalTime.parse(time, TIME_FMT);
         return d.atTime(t).toInstant(ZoneOffset.UTC).getEpochSecond();
     }
-
-    private static String getProp(String key, String def) {
-        String v = System.getProperty(key);
-        if (v == null) v = System.getenv(key.replace('.', '_').toUpperCase());
-        return v != null ? v : def;
-    }
-
-    private static String coalesce(String a, String b) { return a != null ? a : b; }
 }

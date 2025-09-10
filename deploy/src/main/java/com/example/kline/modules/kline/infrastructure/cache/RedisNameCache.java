@@ -2,12 +2,15 @@ package com.example.kline.modules.kline.infrastructure.cache;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.springframework.stereotype.Component;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 股票名称缓存
@@ -28,15 +31,20 @@ public class RedisNameCache {
 
     private static final int NAME_CACHE_DB = 1;  // 使用Redis数据库1存储名称缓存
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    
+    private final StringRedisTemplate redisTemplate;
     private final boolean externalEnabled;
-    private final String redisHost;
-    private final int redisPort;
-    private volatile JedisPool pool; // lazy init
 
-    public RedisNameCache() {
+    @Autowired
+    public RedisNameCache(RedisConnectionFactory connectionFactory) {
         this.externalEnabled = Boolean.parseBoolean(getProp("app.redis.external", "false"));
-        this.redisHost = getProp("spring.redis.host", "127.0.0.1");
-        this.redisPort = Integer.parseInt(getProp("spring.redis.port", "6379"));
+        
+        // 创建专用于名称缓存的 Redis Template，使用数据库1
+        if (externalEnabled) {
+            this.redisTemplate = createNameCacheRedisTemplate(connectionFactory);
+        } else {
+            this.redisTemplate = null;
+        }
     }
 
     public String getName(String stockcode, String marketId) {
@@ -46,10 +54,9 @@ public class RedisNameCache {
         }
         
         String k = key(stockcode, marketId);
-        if (externalEnabled) {
-            try (Jedis j = jedis().getResource()) {
-                j.select(NAME_CACHE_DB);  // 切换到名称缓存数据库
-                String val = j.get(k);
+        if (externalEnabled && redisTemplate != null) {
+            try {
+                String val = redisTemplate.opsForValue().get(k);
                 if (val == null) return null;
                 String parsed = parseNameFromValue(val);
                 if (parsed != null) return parsed;
@@ -69,18 +76,17 @@ public class RedisNameCache {
         }
         
         String k = key(stockcode, marketId);
-        if (externalEnabled) {
-            try (Jedis j = jedis().getResource()) {
-                j.select(NAME_CACHE_DB);  // 切换到名称缓存数据库
+        if (externalEnabled && redisTemplate != null) {
+            try {
                 // Handle null name for JSON formatting
                 String nm = name != null ? name : "";
                 // store as JSON with the requested format
                 String json = String.format("{\"stockCode\":\"%s\", \"marketId\": \"%s\", \"stockname\":\"%s\"}",
                     stockcode, marketId, nm);
                 if (ttlSec > 0) {
-                    j.setex(k, (int) Math.min(ttlSec, Integer.MAX_VALUE), json);
+                    redisTemplate.opsForValue().set(k, json, ttlSec, TimeUnit.SECONDS);
                 } else {
-                    j.set(k, json);
+                    redisTemplate.opsForValue().set(k, json);
                 }
                 return;
             } catch (Exception ignore) {
@@ -91,17 +97,21 @@ public class RedisNameCache {
         store.put(k, name != null ? name : "");
     }
 
-    private JedisPool jedis() {
-        JedisPool p = pool;
-        if (p == null) {
-            synchronized (this) {
-                if (pool == null) {
-                    pool = new JedisPool(new JedisPoolConfig(), redisHost, redisPort);
-                }
-                p = pool;
-            }
-        }
-        return p;
+    /**
+     * 创建专用于名称缓存的 RedisTemplate，使用数据库1
+     */
+    private StringRedisTemplate createNameCacheRedisTemplate(RedisConnectionFactory connectionFactory) {
+        StringRedisTemplate template = new StringRedisTemplate();
+        template.setConnectionFactory(connectionFactory);
+        
+        // 配置默认使用数据库1 - 使用 RedisCallback 明确指定类型
+        template.execute((org.springframework.data.redis.core.RedisCallback<Void>) connection -> {
+            connection.select(NAME_CACHE_DB);
+            return null;
+        });
+        
+        template.afterPropertiesSet();
+        return template;
     }
 
     private String parseNameFromValue(String val) {
