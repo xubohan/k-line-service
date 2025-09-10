@@ -35,17 +35,10 @@ public class KlineRepositoryImpl implements KlineRepository {
         if (limit != null && limit < 0) {
             return new KlineResponse();
         }
+        // Per MVP requirement: Use Redis as primary storage, no fallback to database
+        // If Redis cache miss, return empty response
         KlineResponse cacheResp = klineCache.getRange(stockcode, marketId, startTs, endTs, limit);
-        if (!CollectionUtils.isEmpty(cacheResp.getData())) {
-            return cacheResp;
-        }
-        List<PricePoint> dbData = klineDao.selectRange(stockcode, marketId, startTs, endTs, limit);
-        KlineResponse resp = new KlineResponse();
-        resp.setStockcode(stockcode);
-        resp.setMarketId(marketId);
-        dbData.forEach(resp::addPricePoint);
-        klineCache.putBatch(resp, 900);
-        return resp;
+        return cacheResp != null ? cacheResp : new KlineResponse();
     }
 
     @Override
@@ -59,7 +52,8 @@ public class KlineRepositoryImpl implements KlineRepository {
         if (response.getMarketId() == null || response.getMarketId().trim().isEmpty()) {
             return;
         }
-        klineDao.insertBatch(response.getStockcode(), response.getMarketId(), response.getData());
-        klineCache.putBatch(response, 900);
+        // Per MVP requirement: Skip database operation, use Redis as primary storage
+        // Store data for 15 days (15 * 24 * 3600 = 1,296,000 seconds)
+        klineCache.putBatch(response, 3600);
     }
 }

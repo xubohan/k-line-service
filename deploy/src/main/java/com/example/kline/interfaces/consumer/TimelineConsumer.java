@@ -20,9 +20,6 @@ import org.springframework.stereotype.Component;
 /**
  * Kafka consumer for timeline data with strict schema validation.
  * Expected message JSON schema: {"stockCode","marketId","price","date","time"}.
- *
- * @author xubohan@myhexin.com
- * @date 2025-09-09 22:30:00
  */
 @Component
 @ConditionalOnProperty(name = "app.kafka.enabled", havingValue = "true", matchIfMissing = false)
@@ -48,6 +45,7 @@ public class TimelineConsumer {
 
     /**
      * Consume a JSON message and upsert into repository when valid.
+     * Expected format: {"topic":"timeline", "stock_minute_data":{"stockCode":"300000","marketId":"33","price":"86.96","date":"20200101","time":"0000"}}
      * Invalid messages are discarded per strict API contract.
      */
     @KafkaListener(topics = "timeline", groupId = "kline-service")
@@ -56,7 +54,14 @@ public class TimelineConsumer {
             return;
         }
         try {
-            TimelineMessage msg = objectMapper.readValue(payload, TimelineMessage.class);
+            // Parse the outer wrapper message
+            KafkaMessage kafkaMsg = objectMapper.readValue(payload, KafkaMessage.class);
+            if (kafkaMsg == null || kafkaMsg.stock_minute_data == null) {
+                log.warn("Discarding message without stock_minute_data: {}", payload);
+                return;
+            }
+            
+            TimelineMessage msg = kafkaMsg.stock_minute_data;
             if (!isValid(msg)) {
                 log.warn("Discarding invalid timeline message: {}", payload);
                 return;
@@ -76,8 +81,9 @@ public class TimelineConsumer {
             resp.setMarketId(msg.marketId);
             resp.addPricePoint(p);
 
+            // Per L2 flow: Write directly to Redis cache (no database)
             klineRepository.upsertBatch(resp);
-            // also write to Redis ZSET for L2 cache
+            // Also write to Redis ZSET for L2 cache
             timelineRedisWriter.write(msg.stockCode, msg.marketId, ts, msg.price);
         } catch (Exception e) {
             log.warn("Failed to process timeline message, discarded: {}", payload, e);
@@ -121,5 +127,13 @@ public class TimelineConsumer {
         public String time; // HHmm
 
         public TimelineMessage() {}
+    }
+
+    /** POJO matching the Kafka message wrapper format. */
+    public static class KafkaMessage {
+        public String topic;
+        public TimelineMessage stock_minute_data;
+
+        public KafkaMessage() {}
     }
 }
