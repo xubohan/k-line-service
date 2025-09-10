@@ -85,27 +85,33 @@ public class ApiController {
         Map<String, Object> resp = new LinkedHashMap<>();
         resp.put("code", "0");
         resp.put("message", "success");
-        resp.put("data", new LinkedHashMap<String, Object>() {{ put("stockName", stockName); }});
-
+        
         List<Map<String, Object>> list = response.getData().stream()
             .sorted(Comparator.comparingLong(p -> p.getTs() == null ? 0L : p.getTs()))
-            .map(ApiController::toItem)
+            .map(p -> toTimelineItem(p, stockcode, marketId))
             .collect(Collectors.toList());
-        resp.put("list", list);
+            
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("stockName", stockName);
+        data.put("list", list);
+        resp.put("data", data);
+        
         return resp;
     }
 
-    private static Map<String, Object> toItem(PricePoint p) {
+    /**
+     * Convert PricePoint to timeline message format.
+     * Returns timeline format: {stockCode, marketId, price, date, time}
+     */
+    private static Map<String, Object> toTimelineItem(PricePoint p, String stockcode, String marketId) {
         Map<String, Object> m = new LinkedHashMap<>();
         Instant instant = Instant.ofEpochSecond(p.getTs() == null ? 0L : p.getTs());
+        m.put("stockCode", stockcode);
+        m.put("marketId", marketId);
+        // Use close price as the representative price for timeline format
+        m.put("price", p.getClose());
         m.put("date", DateTimeFormatter.ofPattern("yyyyMMdd").withZone(ZoneOffset.UTC).format(instant));
         m.put("time", DateTimeFormatter.ofPattern("HHmm").withZone(ZoneOffset.UTC).format(instant));
-        // Include OHLC and vol for completeness; contract requires ordering by date,time
-        m.put("open", p.getOpen());
-        m.put("high", p.getHigh());
-        m.put("low", p.getLow());
-        m.put("close", p.getClose());
-        m.put("vol", p.getVol());
         return m;
     }
 }

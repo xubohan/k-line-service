@@ -17,3 +17,9 @@ scripts/run-deploy.sh
 scripts/setup-java8-maven363.sh
 META-INF/MANIFEST.MF
 deploy/src/main/java/com/example/kline/config/ServerPortLogger.java
+
+# Tests folder - exclude all except important documentation
+tests/
+# But keep important README files
+!tests/README*
+!tests/**/*.md
