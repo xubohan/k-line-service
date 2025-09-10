@@ -20,3 +20,6 @@ deploy/src/main/java/com/example/kline/config/ServerPortLogger.java
 
 # Tests folder - exclude all except important documentation
 tests/
+deploy/src/main/java/com/example/kline/common/external/message/TestSender.java
+deploy/src/main/java/com/example/kline/interfaces/rest/KafkaTestController.java
+deploy/src/main/resources/config/dev/application-db.yml
