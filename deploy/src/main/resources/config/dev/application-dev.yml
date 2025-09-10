@@ -1,18 +1,19 @@
 # Development environment configuration
 spring:
   profiles:
-    include: db,mq,business,cache,ext
+    include: db,mq,business,redis,ext
 
 logging:
   level:
     com.example.kline: DEBUG
     org.springframework.kafka: INFO
+    org.apache.kafka: DEBUG  # 添加 Kafka 客户端调试日志
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 # Development specific settings
 app:
   kafka:
-    enabled: true
+    enabled: false  # 开发环境暂时禁用 Kafka，使用内存模拟
   redis:
     external: false  # Use in-memory cache for development

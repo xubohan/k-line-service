@@ -1,0 +1,58 @@
+生产者最佳实践
+1.1 生产者配置
+spring:
+  kafka:
+    bootstrap-servers: 10.10.80.109:9092
+    producer:
+      acks: 1             # 0：不等待服务端响应，丢失风险大；1：主节点写入成功后返回；all:所有节点写入成功后返回。 一般建议配置为1
+      retries: 3          # 失败重试次数
+      batch-size: 16KB    # 16KB批次大小
+      buffer-memory: 32MB # 32MB处理缓冲区
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:                          # spring未支持自动配置的参数
+        linger.ms: 100                     # 批次空闲时间，默认为0，即消息立即发送（batch-size不生效），对单条消息延迟不敏感的业务为了提高吞吐量可以设置该参数进行批量发送
+        request.timeout.ms: 5000           # 请求超时时间，默认5秒
+    properties:                            # 消费者及生产者公用配置
+      security.protocol: SASL_PLAINTEXT    # 权限认证的协议
+      sasl.mechanism: SCRAM-SHA-256        # 权限认证的算法
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="test-7" password="test-7"; # JAAS配置，修改username和password即可
+1.2 生产者代码
+@Component
+public class TestSender{
+ 
+    private final KafkaTemplate<String,String> kafkaTemplate;
+ 
+    public TestSender(KafkaTemplate<String,String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+ 
+    /**
+    * 异步推送
+    * 如果推送不需要确认推送结果并返回，使用非阻塞式推送
+    */
+    public void sendAsync(String topic, String message) {
+        kafkaTemplate.send(topic, message)
+                .addCallback(
+                        (SendResult<String, String> sendResult) -> {
+                            if (Objects.nonNull(sendResult)) {
+                                RecordMetadata metadata = sendResult.getRecordMetadata();
+                                log.info("Send over. {}, {}, {}", metadata.topic(), metadata.partition(), metadata.offset());
+                            }
+                        },
+                        (Throwable e) -> log.warn("Send failed.", e)
+                );
+    }
+ 
+    /**
+    * 同步推送
+    * 如果推送需要确认推送结果并返回，使用阻塞式推送
+    */
+    @SneakyThrows
+    public void sendSync(String topic, String message) {
+        ListenableFuture<SendResult<String,String >> future = kafkaTemplate.send(topic, message);
+        SendResult<String,String > sendResult = future.get();
+        RecordMetadata metadata = sendResult.getRecordMetadata();
+        log.info("Send over. {}, {}, {}", metadata.topic(), metadata.partition(), metadata.offset());
+    }
+}

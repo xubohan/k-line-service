@@ -1,0 +1,93 @@
+消费者最佳实践
+2.1 消费者配置
+spring:
+  kafka:
+    bootstrap-servers: 10.10.80.109:9092
+    # 消费者配置
+    consumer:
+      enable-auto-commit: false   # 禁用自动提交
+      auto-offset-reset: earliest # 设置偏移量重置策略为从最早开始消费，该设置只有在分区里的数据一条都没有ACK的情况下才生效，一般在新建topic和新建消费组的时候才需要用到;该参数不设置时默认值为latest,即新消费组不消费历史数据
+      max-poll-records: 50        # 设置每次poll的最大消息条数，根据业务场景计算，不要照抄。 默认为500，需要注意配合设置max.poll.interval.ms，如果消费过慢会导致消费者被踢出消费组
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        session.timeout.ms: 10000    # 会话超时时间
+        request.timeout.ms: 5000     # 请求超时时间
+        max.poll.interval.ms: 300000 # 最大poll间隔时间，如果两次poll的间隔超过该值，当前消费者会被踢出消费组从而触发再平衡，如果max-poll-records设置比较大，且每次消费耗时较高需要将该值设大
+    listener:
+      type: single                   # 单条消费single, 批量消费为batch，两者的区别参看备注
+      ack-mode: manual_immediate     # 设置ACK模式为手动立刻提交
+    # 消费者及生产者公用配置
+    properties:                           
+      security.protocol: SASL_PLAINTEXT    # 权限认证的协议
+      sasl.mechanism: SCRAM-SHA-256        # 权限认证的算法
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="test-7" password="test-7"; # JAAS配置，修改username和password即可
+
+
+注：
+
+1. 认证配置一般配置在公共的properties即可，但是像测试环境可能会使用到生产者和消费者的用户名密码不一致的情况，这种情况下将认证配置移动到消费者和生产者下的properties里分别配置即可
+
+2. max-poll-records不要照抄，要根据自身消费能力调整！max-poll-records太低会导致拉取频率变高降低消费能力，max-poll-records太高如果自身消费能力不够可能无法在max.poll.interval.ms要求时间内消费完从而触发再平衡
+
+3. 单条消费吞吐量低稳定性高，能保证每一条数据需要正确处理和ACK，如果处理失败能够从失败位置进行重试, 如果对容错要求高建议一定使用单挑消费，如果吞吐量上不去建议增加分区和消费者线程
+
+4. 批量消费吞吐量高稳定性低，由于其ACK机制要求出现错误可以直接抛弃或者整批重试，因为批量消费提交ACK会将offset提交到这批数据的末尾位置，假设拉取了100条数据，处理完第一条就进行ACK则会将offset提交到第100条数据的位置，此时容器重启则会从100的位置进行消费，从而丢失99条数据，因此批量消费模式要求必须将整批数据消费完之后才能进行ACK。适用于拉起一批数据后能够作为一个整体进行处理的场景，特别适用于日志入库等场景。
+
+2.2 消费者代码
+@Slf4j
+@Component
+public class TestConsumer {
+ 
+    // 单条消费的代码，注意 listener.type需要设置为single，形参使用ConsumerRecord
+    @KafkaListener(
+            id = "test-consumer",
+            topics = "${mq-config.topic}",
+            groupId = "${mq-config.group}",
+            concurrency = "${mq-config.concurrency}",
+            autoStartup = "${mq-config.autoStartup}"
+    )
+    public void testConsume(Acknowledgment ack, ConsumerRecord<String,String> record) throws Exception {
+        try{
+            log.info("Receive Message. Message info: {}", record.value());
+            // 消费逻辑
+            doSomething();
+            // ACK
+            ack.acknowledge();
+            log.info("Consume success. Topic:{}, Partition:{}, Offset:{}",
+                   record.topic(), record.partition(), record.offset());
+        } catch (Exception e) {
+            // 异常处理逻辑
+        }
+    }
+ 
+     
+    // 批量消费的代码，注意 listener.type需要设置为BATCH，形参使用ConsumerRecords
+    @KafkaListener(
+            id = "test-consumer",
+            topics = "${mq-config.topic}",
+            groupId = "${mq-config.group}",
+            concurrency = "${mq-config.concurrency}",
+            autoStartup = "${mq-config.autoStartup}"
+    )
+    public void testConsume(Acknowledgment ack, ConsumerRecords<String,String> records) throws Exception {
+        try{
+            log.info("Receive Message. Message info: {}", record.value());
+            // 消费逻辑，可以丢进线程池，也可以执行整体入库
+            doSomething();
+            // ACK，要注意批量消费必须保证整批数据消费完成才能ACK，否则会导致数据丢失             、
+            ack.acknowledge();
+            log.info("Consume success. Topic:{}, Partition:{}, Offset:{}",
+                   record.topic(), record.partition(), record.offset());
+        } catch (Exception e) {
+            // 异常处理逻辑
+        }
+    }
+}
+注： 
+
+1. @KafkaListener中的id尽可能按照消费者的用途进行配置，在监控指标中会体现在client-id上，便于分辨
+
+2. 上面的mq-config.topic等配置项为项目自定义的消费者配置，推荐使这种用配置文件+变量的形式配置消费者，方便修改消费线程数等配置，同时在本地等环境可以设置autoStartup禁止消费者自启动
+
+3. 关于批量消费的容错。批量消费必须保证整批数据消费完成才能ACK，否则会导致数据丢失, 因此批量消费的容错就不能像单条消费一样直接依赖于kafka的重试机制了，需要业务自行落库记录。

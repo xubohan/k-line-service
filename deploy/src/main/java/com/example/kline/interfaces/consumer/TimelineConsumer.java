@@ -10,11 +10,13 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 /**
@@ -44,26 +46,39 @@ public class TimelineConsumer {
     }
 
     /**
-     * Consume a JSON message and upsert into repository when valid.
+     * 单条消费的代码，注意 listener.type需要设置为single，形参使用ConsumerRecord
+     * 按照 listener.txt 最佳实践实现手动ACK
      * Expected format: {"topic":"timeline", "stock_minute_data":{"stockCode":"300000","marketId":"33","price":"86.96","date":"20200101","time":"0000"}}
      * Invalid messages are discarded per strict API contract.
      */
-    @KafkaListener(topics = "timeline", groupId = "kline-service")
-    public void run(String payload) {
+    @KafkaListener(
+            id = "timeline-consumer",
+            topics = "timeline",
+            groupId = "kline-service",
+            concurrency = "1",
+            autoStartup = "true"
+    )
+    public void run(Acknowledgment ack, ConsumerRecord<String,String> record) throws Exception {
+        String payload = record.value();
         if (payload == null || payload.trim().isEmpty()) {
+            ack.acknowledge();
             return;
         }
         try {
+            log.info("Receive Message. Message info: {}", payload);
+            
             // Parse the outer wrapper message
             KafkaMessage kafkaMsg = objectMapper.readValue(payload, KafkaMessage.class);
             if (kafkaMsg == null || kafkaMsg.stock_minute_data == null) {
                 log.warn("Discarding message without stock_minute_data: {}", payload);
+                ack.acknowledge(); // ACK even for invalid messages to avoid reprocessing
                 return;
             }
             
             TimelineMessage msg = kafkaMsg.stock_minute_data;
             if (!isValid(msg)) {
                 log.warn("Discarding invalid timeline message: {}", payload);
+                ack.acknowledge(); // ACK invalid messages
                 return;
             }
 
@@ -81,12 +96,20 @@ public class TimelineConsumer {
             resp.setMarketId(msg.marketId);
             resp.addPricePoint(p);
 
-            // Per L2 flow: Write directly to Redis cache (no database)
+            // 消费逻辑：Per L2 flow: Write directly to Redis cache (no database)
             klineRepository.upsertBatch(resp);
             // Also write to Redis ZSET for L2 cache
             timelineRedisWriter.write(msg.stockCode, msg.marketId, ts, msg.price);
+            
+            // ACK 确认消息处理成功
+            ack.acknowledge();
+            log.info("Consume success. Topic:{}, Partition:{}, Offset:{}",
+                   record.topic(), record.partition(), record.offset());
         } catch (Exception e) {
-            log.warn("Failed to process timeline message, discarded: {}", payload, e);
+            log.error("Failed to process timeline message: {}", payload, e);
+            // 异常处理逻辑：可以选择ACK（丢弃错误消息）或不ACK（重试）
+            // 这里选择ACK避免无限重试
+            ack.acknowledge();
         }
     }
 
