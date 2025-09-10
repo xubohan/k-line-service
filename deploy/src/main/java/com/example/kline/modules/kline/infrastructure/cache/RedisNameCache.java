@@ -14,9 +14,6 @@ import redis.clients.jedis.JedisPoolConfig;
  * - In-memory map (default, no external deps)
  * - Real Redis via Jedis when enabled by system/env property
  *   app.redis.external=true (host: spring.redis.host, port: spring.redis.port)
- *
- * @author xubohan@myhexin.com
- * @date 2025-09-09 22:30:00
  */
 @Component
 public class RedisNameCache {
@@ -35,6 +32,11 @@ public class RedisNameCache {
     }
 
     public String getName(String stockcode, String marketId) {
+        // Per MVP principle: return null for invalid input to prevent service interruption
+        if (stockcode == null || marketId == null) {
+            return null; // return null for invalid input
+        }
+        
         String k = key(stockcode, marketId);
         if (externalEnabled) {
             try (Jedis j = jedis().getResource()) {
@@ -52,12 +54,19 @@ public class RedisNameCache {
     }
 
     public void setName(String stockcode, String marketId, String name, long ttlSec) {
+        // Per MVP principle: discard null values to prevent service interruption
+        if (stockcode == null || marketId == null) {
+            return; // no-op, discard invalid input
+        }
+        
         String k = key(stockcode, marketId);
         if (externalEnabled) {
             try (Jedis j = jedis().getResource()) {
+                // Handle null name for JSON formatting
+                String nm = name != null ? name : "";
                 // store as JSON with the requested format
                 String json = String.format("{\"stockCode\":\"%s\", \"marketId\": \"%s\", \"stockname\":\"%s\"}",
-                    stockcode, marketId, name);
+                    stockcode, marketId, nm);
                 if (ttlSec > 0) {
                     j.setex(k, (int) Math.min(ttlSec, Integer.MAX_VALUE), json);
                 } else {
@@ -68,7 +77,8 @@ public class RedisNameCache {
                 // fall through to in-memory
             }
         }
-        store.put(k, name);
+        // Handle null name for in-memory storage
+        store.put(k, name != null ? name : "");
     }
 
     private JedisPool jedis() {

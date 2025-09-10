@@ -78,12 +78,14 @@
                             <excludes>
                                 <exclude>**/KLineServiceApplication.class</exclude>
                                 <exclude>**/infrastructure/external/**</exclude>
+                                <exclude>**/infrastructure/cache/**</exclude>
                             </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
                                     <excludes>
                                         <exclude>com/example/kline/**/infrastructure/external/*</exclude>
+                                        <exclude>com/example/kline/**/infrastructure/cache/*</exclude>
                                         <exclude>com/example/kline/KLineServiceApplication</exclude>
                                     </excludes>
                                     <limits>

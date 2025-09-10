@@ -45,15 +45,27 @@ public class RedisNameCacheTest {
         // Arrange
         RedisNameCache cache = new RedisNameCache();
         
-        // Act & Assert - should not throw exceptions
+        // Act & Assert - MVP principle: handle empty and null values gracefully
+        // Empty values should be cached normally
         cache.setName("", "", "", 3600);
-        cache.setName(null, null, null, 3600);
-        
         String result1 = cache.getName("", "");
-        String result2 = cache.getName(null, null);
+        Assertions.assertEquals("", result1);
         
-        // These may return null or empty based on implementation
-        // The test mainly ensures no exceptions are thrown
+        // Per MVP principle: null values should be discarded (no-op) to prevent service interruption
+        // These operations should not throw any exception
+        cache.setName(null, null, null, 3600);  // Should be no-op
+        cache.setName(null, "market", "name", 3600);  // Should be no-op
+        cache.setName("stock", null, "name", 3600);  // Should be no-op
+        
+        // getName with null should return null without throwing exception
+        String result2 = cache.getName(null, null);
+        String result3 = cache.getName(null, "market");
+        String result4 = cache.getName("stock", null);
+        
+        // All null operations should return null (not found) without exception
+        Assertions.assertNull(result2);
+        Assertions.assertNull(result3);
+        Assertions.assertNull(result4);
     }
 
     @Test

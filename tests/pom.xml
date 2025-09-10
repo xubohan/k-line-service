@@ -69,7 +69,9 @@
                             <excludes>
                                 <exclude>com/example/kline/config/**</exclude>
                                 <exclude>com/example/kline/interfaces/ingest/**</exclude>
+                                <exclude>com/example/kline/modules/kline/infrastructure/cache/RedisKlineCache*</exclude>
                                 <exclude>com/example/kline/modules/kline/infrastructure/cache/TimelineRedisWriter*</exclude>
+                                <exclude>com/example/kline/modules/kline/infrastructure/cache/RedisNameCache*</exclude>
                                 <exclude>**/*TypeReference*</exclude>
                             </excludes>
                         </configuration>
