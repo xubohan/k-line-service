@@ -1,7 +1,0 @@
-[
-  {"stockCode":"300033","marketId":"33","price":0.0,"date":"19700101","time":"0000"},
-  {"stockCode":"300033","marketId":"33","price":999999999.9,"date":"20200101","time":"2359"},
-  {"stockCode":"300033","marketId":"33","price":1.0e-9,"date":"20200101","time":"0000"},
-  {"stockCode":"300033","marketId":"33","price":123.45,"date":"20991231","time":"2359"},
-  {"stockCode":"300033","marketId":"33","price":50.0,"date":"19000101","time":"1200"}
-]
