@@ -1,4 +1,4 @@
-package com.example.kline;
+package com.myhexin.departname.projectname.example.deploy.kline;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
