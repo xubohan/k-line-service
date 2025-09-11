@@ -38,11 +38,12 @@ public class TimelineConsumer {
     public TimelineConsumer(KlineRepository klineRepository, TimelineRedisWriter timelineRedisWriter) {
         this.klineRepository = klineRepository;
         this.timelineRedisWriter = timelineRedisWriter;
+        log.info("TimelineConsumer initialized with manual ACK enabled");
     }
 
     // Backward-compatible convenience constructor for tests without Spring context
     public TimelineConsumer(KlineRepository klineRepository) {
-        this(klineRepository, new com.example.kline.modules.kline.infrastructure.cache.TimelineRedisWriter());
+        this(klineRepository, new TimelineRedisWriter());
     }
 
     /**
@@ -56,31 +57,38 @@ public class TimelineConsumer {
             topics = "timeline",
             groupId = "kline-service",
             concurrency = "1",
-            autoStartup = "true"
+            autoStartup = "true",
+            containerFactory = "manualAckKafkaListenerContainerFactory"
     )
-    public void run(Acknowledgment ack, ConsumerRecord<String,String> record) throws Exception {
+    public void run(ConsumerRecord<String, String> record, Acknowledgment ack) throws Exception {
         String payload = record.value();
+        
         if (payload == null || payload.trim().isEmpty()) {
+            log.warn("⚠️ Empty or null payload, acknowledging and skipping");
             ack.acknowledge();
             return;
         }
+        
         try {
-            log.info("Receive Message. Message info: {}", payload);
+            log.info("📥 Receive Message. Message info: {}", payload);
             
             // Parse the outer wrapper message
             KafkaMessage kafkaMsg = objectMapper.readValue(payload, KafkaMessage.class);
             if (kafkaMsg == null || kafkaMsg.stock_minute_data == null) {
-                log.warn("Discarding message without stock_minute_data: {}", payload);
+                log.warn("⚠️ Discarding message without stock_minute_data: {}", payload);
                 ack.acknowledge(); // ACK even for invalid messages to avoid reprocessing
                 return;
             }
             
             TimelineMessage msg = kafkaMsg.stock_minute_data;
             if (!isValid(msg)) {
-                log.warn("Discarding invalid timeline message: {}", payload);
+                log.warn("⚠️ Discarding invalid timeline message: {}", payload);
                 ack.acknowledge(); // ACK invalid messages
                 return;
             }
+
+            log.info("✅ Valid message parsed - StockCode:{}, MarketId:{}, Price:{}, Date:{}, Time:{}", 
+                    msg.stockCode, msg.marketId, msg.price, msg.date, msg.time);
 
             long ts = toEpochSeconds(msg.date, msg.time);
             PricePoint p = new PricePoint();
@@ -97,16 +105,17 @@ public class TimelineConsumer {
             resp.addPricePoint(p);
 
             // 消费逻辑：Per L2 flow: Write directly to Redis cache (no database)
+            log.info("💾 Writing to KlineRepository and Redis...");
             klineRepository.upsertBatch(resp);
             // Also write to Redis ZSET for L2 cache
             timelineRedisWriter.write(msg.stockCode, msg.marketId, ts, msg.price);
             
             // ACK 确认消息处理成功
             ack.acknowledge();
-            log.info("Consume success. Topic:{}, Partition:{}, Offset:{}",
-                   record.topic(), record.partition(), record.offset());
+            log.info("✅ Consume success. Topic:{}, Partition:{}, Offset:{}, StockCode:{}, Price:{}",
+                   record.topic(), record.partition(), record.offset(), msg.stockCode, msg.price);
         } catch (Exception e) {
-            log.error("Failed to process timeline message: {}", payload, e);
+            log.error("❌ Failed to process timeline message: {}", payload, e);
             // 异常处理逻辑：可以选择ACK（丢弃错误消息）或不ACK（重试）
             // 这里选择ACK避免无限重试
             ack.acknowledge();

@@ -1,9 +1,11 @@
 # Cache Configuration (Redis)
 spring:
   redis:
-    host: ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_IP}
-    port: ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_PORT}
-    password: protfolio!@#*
+    host: localhost
+    # ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_IP}
+    port: 6379
+    # ${ARSENAL_SVC_SNS_ASK_HXREDIS_HXREDIS_TCP_PORT}
+    # password: protfolio!@#*
     timeout: 5000
     database: 0
     lettuce:

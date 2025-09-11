@@ -1,11 +1,11 @@
 # Kafka Message Queue Configuration
 spring:
   kafka:
-    bootstrap-servers: 10.10.80.109:9092
+    bootstrap-servers: localhost:9092
     
     # Producer configuration
     producer:
-      bootstrap-servers: 10.10.80.109:9092  # 明确指定生产者服务器
+      bootstrap-servers: localhost:9092
       acks: 1                    # 主节点写入成功后返回
       retries: 3                 # 失败重试次数
       batch-size: 16384          # 16KB批次大小
@@ -16,13 +16,11 @@ spring:
         linger.ms: 100                     # 批次空闲时间
         request.timeout.ms: 5000           # 请求超时时间
         max.in.flight.requests.per.connection: 1  # 保证严格有序
-        security.protocol: SASL_PLAINTEXT
-        sasl.mechanism: SCRAM-SHA-256
-        sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="test-7" password="test-7";
+        security.protocol: PLAINTEXT
     
     # Consumer configuration
     consumer:
-      bootstrap-servers: 10.10.80.109:9092  # 明确指定消费者服务器
+      bootstrap-servers: localhost:9092
       group-id: kline-service
       enable-auto-commit: false   # 禁用自动提交
       auto-offset-reset: earliest # 设置偏移量重置策略为从最早开始消费
@@ -33,9 +31,7 @@ spring:
         session.timeout.ms: 10000    # 会话超时时间
         request.timeout.ms: 5000     # 请求超时时间
         max.poll.interval.ms: 300000 # 最大poll间隔时间
-        security.protocol: SASL_PLAINTEXT
-        sasl.mechanism: SCRAM-SHA-256
-        sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="test-7" password="test-7";
+        security.protocol: PLAINTEXT
     
     # Listener configuration
     listener:
